@@ -19,7 +19,7 @@ class ChecklistDatabaseHelper {
       join(await getDatabasesPath(), "items.db"),
       onCreate: (db, version) async {
         return db.execute(
-          "CREATE TABLE items(id INTEGER PRIMARY KEY AUTOINCREMENT, item TEXT, priority INTEGER, checked INTEGER, position INTEGER)",
+          "CREATE TABLE items(id INTEGER PRIMARY KEY, item TEXT, priority INTEGER, checked INTEGER, position INTEGER)",
         );
       },
       version: 1,

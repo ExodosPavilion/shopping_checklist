@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import './Item.dart';
-import 'ChecklistDatabaseHelper.dart';
+import 'package:shopping_checklist/data/ChecklistDatabase.dart';
 
 class CheckList extends StatefulWidget {
   @override
@@ -20,7 +19,7 @@ class _CheckListState extends State<CheckList> {
   @override
   void initState() {
     super.initState();
-    ChecklistDatabaseHelper.items().then((val) => setState(() {
+    ChecklistDatabase().itemDao.getAllItems().then((val) => setState(() {
           _list = val;
         }));
 
@@ -67,67 +66,70 @@ class _CheckListState extends State<CheckList> {
     }
 
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return SimpleDialog(
-          title: const Text('Enter item info:'),
-          children: <Widget>[
-            SimpleDialogOption(
-              onPressed: () {},
-              child: TextField(
-                controller: myController,
-                focusNode: myFocusNode,
-              ),
-            ),
-            SimpleDialogOption(
-              child: DropdownButton(
-                value: tempPriority,
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(child: Text("High"), value: 2),
-                  DropdownMenuItem(child: Text("Medium"), value: 1),
-                  DropdownMenuItem(child: Text("Low"), value: 0),
-                ],
-                onChanged: (priority) {
-                  tempPriority = priority;
-                },
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: SimpleDialogOption(
-                onPressed: () {},
-                child: TextButton(
-                    onPressed: () {
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(builder: (context, setState) {
+            return SimpleDialog(
+              title: const Text('Enter item info:'),
+              children: <Widget>[
+                SimpleDialogOption(
+                  onPressed: () {},
+                  child: TextField(
+                    controller: myController,
+                    focusNode: myFocusNode,
+                  ),
+                ),
+                SimpleDialogOption(
+                  child: DropdownButton(
+                    value: tempPriority,
+                    items: <DropdownMenuItem>[
+                      DropdownMenuItem(child: Text("High"), value: 2),
+                      DropdownMenuItem(child: Text("Medium"), value: 1),
+                      DropdownMenuItem(child: Text("Low"), value: 0),
+                    ],
+                    onChanged: (priority) {
                       setState(() {
-                        if (itemIndex == -1) {
-                          Item item = Item(
-                              item: myController.text,
-                              priority: tempPriority,
-                              checked: false,
-                              position: availablePosition);
-                          _list.add(item);
-                          ChecklistDatabaseHelper.insertItem(item);
-                          availablePosition += 1;
-                        } else {
-                          editItem.item = myController.text;
-                          editItem.priority = tempPriority;
-                          _list.insert(itemIndex, editItem);
-                          ChecklistDatabaseHelper.updateItem(editItem);
-                        }
-                        myController.clear();
+                        tempPriority = priority;
                       });
-                      Navigator.of(context).pop();
                     },
-                    child: Text(
-                      'Add',
-                      style: TextStyle(fontSize: 18),
-                    )),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: SimpleDialogOption(
+                    onPressed: () {},
+                    child: TextButton(
+                        onPressed: () {
+                          super.setState(() {
+                            if (itemIndex == -1) {
+                              Item item = Item(
+                                  item: myController.text,
+                                  priority: tempPriority,
+                                  checked: false,
+                                  position: availablePosition);
+                              _list.add(item);
+                              ChecklistDatabase().itemDao.insertItem(item);
+                              availablePosition += 1;
+                            } else {
+                              editItem.item = myController.text;
+                              editItem.priority = tempPriority;
+                              _list.insert(itemIndex, editItem);
+                              ChecklistDatabase().itemDao.updateItem(editItem);
+                            }
+                            myController.clear();
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          'Add',
+                          style: TextStyle(fontSize: 18),
+                        )),
+                  ),
+                ),
+              ],
+            );
+          });
+        });
   }
 
   Widget _buildList() {
@@ -166,7 +168,7 @@ class _CheckListState extends State<CheckList> {
   void _updatePositions() async {
     for (int i = 0; i < _list.length; i++) {
       _list[i].position = i;
-      await ChecklistDatabaseHelper.updateItem(_list[i]);
+      await ChecklistDatabase().itemDao.updateItem(_list[i]);
     }
   }
 
@@ -181,7 +183,7 @@ class _CheckListState extends State<CheckList> {
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
           _list.remove(item);
-          ChecklistDatabaseHelper.deleteItem(item.id);
+          ChecklistDatabase().itemDao.deleteItem(item);
         } else {
           var itemPosition = _list.indexOf(item);
           var itemCopy = _list.removeAt(itemPosition);
@@ -209,7 +211,7 @@ class _CheckListState extends State<CheckList> {
             } else {
               item.checked = true;
             }
-            ChecklistDatabaseHelper.updateItem(item);
+            ChecklistDatabase().itemDao.updateItem(item);
           });
         },
       ),

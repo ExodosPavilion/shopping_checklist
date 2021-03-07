@@ -1,7 +1,7 @@
 class Item {
   final int id;
   String item;
-  int priority;
+  int priority; //0 = low, 1 = medium, 2 = high
   bool checked;
   int position;
   int presetId;
