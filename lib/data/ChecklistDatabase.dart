@@ -34,6 +34,14 @@ class ItemDao extends DatabaseAccessor<ChecklistDatabase> with _$ItemDaoMixin {
         .get();
   }
 
+  Stream<List<Item>> watchAllItems() {
+    return (select(items)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.position, mode: OrderingMode.asc)
+          ]))
+        .watch();
+  }
+
   Future insertItem(Insertable<Item> item) => into(items).insert(item);
 
   Future updateItem(Insertable<Item> item) => update(items).replace(item);
