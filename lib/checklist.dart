@@ -8,9 +8,6 @@ class CheckList extends StatefulWidget {
 }
 
 class _CheckListState extends State<CheckList> {
-  //Stores all the checklist items entered by the user
-  List<Item> _list = <Item>[];
-
   //the next position available
   int availablePosition = 0;
 
@@ -142,10 +139,16 @@ class _CheckListState extends State<CheckList> {
         return ReorderableListView(
             children: _getListItems(items, dao),
             onReorder: (oldIndex, newIndex) {
-              if (newIndex == items.length) {
-                _updateList(items[oldIndex], items[newIndex - 1]);
-              } else {
-                _updateList(items[oldIndex], items[newIndex]);
+              // Code ReorderableListView problem code from: https://gist.github.com/ffeu/e6ab522bdbcdfdfc7056bcc7ff2f67c7
+              // These two lines are workarounds for ReorderableListView problems
+              if (newIndex > items.length) newIndex = items.length;
+              if (oldIndex < newIndex) newIndex--;
+
+              items.insert(newIndex, items.removeAt(oldIndex));
+
+              for (int i = 0; i < items.length; i++) {
+                items[i].position = i;
+                dao.updateItem(items[i]);
               }
             });
       },
@@ -157,19 +160,6 @@ class _CheckListState extends State<CheckList> {
       .map((i, item) => MapEntry(i, _buildRow(item, itemdao)))
       .values
       .toList();
-
-  void _updateList(Item oldItem, Item newItem) {
-    final dao = Provider.of<ItemDao>(context, listen: false);
-
-    int newItemPos = newItem.position;
-    int oldItemPos = oldItem.position;
-
-    oldItem.position = newItemPos;
-    newItem.position = oldItemPos;
-
-    dao.updateItem(oldItem);
-    dao.updateItem(newItem);
-  }
 
   Widget _buildRow(Item item, ItemDao itemDao) {
     //Builds a row for a list
