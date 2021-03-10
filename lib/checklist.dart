@@ -52,9 +52,9 @@ class _CheckListState extends State<CheckList> {
     var tempPriority = 0;
     final dao = Provider.of<ItemDao>(context, listen: false);
 
-    if (editItem != null) {
-      tempPriority = editItem.priority;
-      myController.text = editItem.item;
+    if (focusItem != null) {
+      tempPriority = focusItem.priority;
+      myController.text = focusItem.item;
     }
 
     showDialog(
