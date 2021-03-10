@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopping_checklist/data/ChecklistDatabase.dart';
+import 'package:provider/provider.dart';
 
 class CheckList extends StatefulWidget {
   @override
@@ -7,9 +8,6 @@ class CheckList extends StatefulWidget {
 }
 
 class _CheckListState extends State<CheckList> {
-  //Stores all the checklist items entered by the user
-  List<Item> _list = <Item>[];
-
   //the next position available
   int availablePosition = 0;
 
@@ -19,13 +17,6 @@ class _CheckListState extends State<CheckList> {
   @override
   void initState() {
     super.initState();
-    ChecklistDatabase().itemDao.getAllItems().then((val) => setState(() {
-          _list = val;
-        }));
-
-    if (_list.length != 0) {
-      availablePosition = _list[_list.length - 1].position;
-    }
 
     myFocusNode = FocusNode();
   }
@@ -51,14 +42,15 @@ class _CheckListState extends State<CheckList> {
             _newItemScreenGenerator, //Function that runs when the button is pressed
         child: Icon(Icons.add),
       ), //Creates the floating action button
-      body: _buildList(),
+      body: _buildList(context),
     );
   }
 
-  void _newItemScreenGenerator({Item focusItem, int itemIndex = -1}) {
+  void _newItemScreenGenerator({Item editItem, bool editing = false}) {
     myFocusNode = FocusNode();
     myFocusNode.requestFocus();
     var tempPriority = 0;
+    final dao = Provider.of<ItemDao>(context, listen: false);
 
     if (focusItem != null) {
       tempPriority = focusItem.priority;
@@ -99,30 +91,22 @@ class _CheckListState extends State<CheckList> {
                   child: SimpleDialogOption(
                     onPressed: () {},
                     child: TextButton(
-                        onPressed: () async {
-                          super.setState(() {
-                            if (itemIndex == -1) {
-                              focusItem = Item(
-                                  item: myController.text,
-                                  priority: tempPriority,
-                                  checked: false,
-                                  position: availablePosition);
-                              _list.add(focusItem);
-                              availablePosition += 1;
-                            } else {
-                              focusItem.item = myController.text;
-                              focusItem.priority = tempPriority;
-                              _list.insert(itemIndex, focusItem);
-                              ChecklistDatabase().itemDao.updateItem(focusItem);
-                            }
-                            myController.clear();
-                          });
-                          if (itemIndex == -1) {
-                            var temp = await ChecklistDatabase()
-                                .itemDao
-                                .insertItem(focusItem);
-                            print(temp);
+                        onPressed: () {
+                          if (!editing) {
+                            Item item = Item(
+                                item: myController.text,
+                                priority: tempPriority,
+                                checked: false,
+                                position: availablePosition);
+                            dao.insertItem(item);
+                            availablePosition += 1;
+                          } else {
+                            dao.deleteItem(editItem);
+                            editItem.item = myController.text;
+                            editItem.priority = tempPriority;
+                            dao.insertItem(editItem);
                           }
+                          myController.clear();
                           Navigator.of(context).pop();
                         },
                         child: Text(
@@ -137,7 +121,7 @@ class _CheckListState extends State<CheckList> {
         });
   }
 
-  Widget _buildList() {
+  StreamBuilder<List<Item>> _buildList(BuildContext context) {
     //builds a list of items using the rows provided by _buildRow
 /*     return ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -145,41 +129,39 @@ class _CheckListState extends State<CheckList> {
         itemBuilder: (BuildContext _context, int i) {
           return _buildRow(_list[i]);
         }); */
-    return ReorderableListView(
-      children: _getListItems(),
-      onReorder: (oldIndex, newIndex) {
-        _updateList(oldIndex, newIndex);
+    final dao = Provider.of<ItemDao>(context);
+    return StreamBuilder(
+      stream: dao.watchAllItems(),
+      builder: (context, AsyncSnapshot<List<Item>> snapshot) {
+        final items = snapshot.data ?? [];
+        availablePosition = items.length;
+
+        return ReorderableListView(
+            children: _getListItems(items, dao),
+            onReorder: (oldIndex, newIndex) {
+              // Code ReorderableListView problem code from: https://gist.github.com/ffeu/e6ab522bdbcdfdfc7056bcc7ff2f67c7
+              // These two lines are workarounds for ReorderableListView problems
+              if (newIndex > items.length) newIndex = items.length;
+              if (oldIndex < newIndex) newIndex--;
+
+              items.insert(newIndex, items.removeAt(oldIndex));
+
+              for (int i = 0; i < items.length; i++) {
+                items[i].position = i;
+                dao.updateItem(items[i]);
+              }
+            });
       },
     );
   }
 
-  List<Widget> _getListItems() => _list
+  List<Widget> _getListItems(List items, ItemDao itemdao) => items
       .asMap()
-      .map((i, item) => MapEntry(i, _buildRow(item)))
+      .map((i, item) => MapEntry(i, _buildRow(item, itemdao)))
       .values
       .toList();
 
-  void _updateList(int oldIndex, int newIndex) {
-    setState(() {
-      // Code ReorderableListView problem code from: https://gist.github.com/ffeu/e6ab522bdbcdfdfc7056bcc7ff2f67c7
-      // These two lines are workarounds for ReorderableListView problems
-      if (newIndex > _list.length) newIndex = _list.length;
-      if (oldIndex < newIndex) newIndex--;
-
-      _list.insert(newIndex, _list.removeAt(oldIndex));
-
-      _updatePositions();
-    });
-  }
-
-  void _updatePositions() async {
-    for (int i = 0; i < _list.length; i++) {
-      _list[i].position = i;
-      await ChecklistDatabase().itemDao.updateItem(_list[i]);
-    }
-  }
-
-  Widget _buildRow(Item item) {
+  Widget _buildRow(Item item, ItemDao itemDao) {
     //Builds a row for a list
     final checked = item.checked;
 
@@ -189,12 +171,9 @@ class _CheckListState extends State<CheckList> {
       secondaryBackground: _deleteSlide(),
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
-          _list.remove(item);
-          ChecklistDatabase().itemDao.deleteItem(item);
+          itemDao.deleteItem(item);
         } else {
-          var itemPosition = _list.indexOf(item);
-          var itemCopy = _list.removeAt(itemPosition);
-          _newItemScreenGenerator(focusItem: itemCopy, itemIndex: itemPosition);
+          _newItemScreenGenerator(editItem: item, editing: true);
         }
       },
       child: ListTile(
@@ -218,7 +197,7 @@ class _CheckListState extends State<CheckList> {
             } else {
               item.checked = true;
             }
-            ChecklistDatabase().itemDao.updateItem(item);
+            itemDao.updateItem(item);
           });
         },
       ),
