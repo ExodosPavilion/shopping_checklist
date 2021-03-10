@@ -55,8 +55,8 @@ class _CheckListState extends State<CheckList> {
     final dao = Provider.of<ItemDao>(context, listen: false);
 
     if (editItem != null) {
-      tempPriority = editItem.priority as int;
-      myController.text = editItem.item as String;
+      tempPriority = editItem.priority.value;
+      myController.text = editItem.item.value;
     }
 
     showDialog(
