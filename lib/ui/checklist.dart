@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shopping_checklist/data/ChecklistDatabase.dart';
+import 'package:shopping_checklist/data/AppDatabase.dart';
+import 'package:moor/moor.dart';
 import 'package:provider/provider.dart';
 
 class CheckList extends StatefulWidget {
@@ -46,15 +47,16 @@ class _CheckListState extends State<CheckList> {
     );
   }
 
-  void _newItemScreenGenerator({Item editItem, bool editing = false}) {
+  void _newItemScreenGenerator(
+      {ItemsCompanion editItem, bool editing = false}) {
     myFocusNode = FocusNode();
     myFocusNode.requestFocus();
     var tempPriority = 0;
     final dao = Provider.of<ItemDao>(context, listen: false);
 
     if (editItem != null) {
-      tempPriority = editItem.priority;
-      myController.text = editItem.item;
+      tempPriority = editItem.priority as int;
+      myController.text = editItem.item as String;
     }
 
     showDialog(
@@ -93,18 +95,16 @@ class _CheckListState extends State<CheckList> {
                     child: TextButton(
                         onPressed: () {
                           if (!editing) {
-                            Item item = Item(
+                            ItemsCompanion item = ItemsCompanion.insert(
                                 item: myController.text,
                                 priority: tempPriority,
-                                checked: false,
                                 position: availablePosition);
                             dao.insertItem(item);
                             availablePosition += 1;
                           } else {
-                            dao.deleteItem(editItem);
-                            editItem.item = myController.text;
-                            editItem.priority = tempPriority;
-                            dao.insertItem(editItem);
+                            dao.updateItem(editItem.copyWith(
+                                item: Value(myController.text),
+                                priority: Value(tempPriority)));
                           }
                           myController.clear();
                           Navigator.of(context).pop();
@@ -147,8 +147,7 @@ class _CheckListState extends State<CheckList> {
               items.insert(newIndex, items.removeAt(oldIndex));
 
               for (int i = 0; i < items.length; i++) {
-                items[i].position = i;
-                dao.updateItem(items[i]);
+                dao.updateItem(items[i].copyWith(position: i));
               }
             });
       },
@@ -173,7 +172,8 @@ class _CheckListState extends State<CheckList> {
         if (direction == DismissDirection.endToStart) {
           itemDao.deleteItem(item);
         } else {
-          _newItemScreenGenerator(editItem: item, editing: true);
+          _newItemScreenGenerator(
+              editItem: item.toCompanion(false), editing: true);
         }
       },
       child: ListTile(
@@ -192,12 +192,7 @@ class _CheckListState extends State<CheckList> {
         onTap: () {
           //when tapped set the state of the item to either checked or not depending on the previous value
           setState(() {
-            if (checked) {
-              item.checked = false;
-            } else {
-              item.checked = true;
-            }
-            itemDao.updateItem(item);
+            itemDao.updateItem(item.copyWith(checked: checked));
           });
         },
       ),

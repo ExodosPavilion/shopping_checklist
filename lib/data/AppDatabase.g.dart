@@ -1,20 +1,20 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ChecklistDatabase.dart';
+part of 'AppDatabase.dart';
 
 // **************************************************************************
 // MoorGenerator
 // **************************************************************************
 
-// ignore_for_file: unnecessary_brace_in_string_interps
+// ignore_for_file: unnecessary_brace_in_string_interps, unnecessary_this
 class Item extends DataClass implements Insertable<Item> {
   final int id;
-  String item;
-  int priority;
-  bool checked;
-  int position;
+  final String item;
+  final int priority;
+  final bool checked;
+  final int position;
   Item(
-      {this.id,
+      {@required this.id,
       @required this.item,
       @required this.priority,
       @required this.checked,
@@ -36,30 +36,28 @@ class Item extends DataClass implements Insertable<Item> {
           intType.mapFromDatabaseResponse(data['${effectivePrefix}position']),
     );
   }
-  factory Item.fromJson(Map<String, dynamic> json,
-      {ValueSerializer serializer = const ValueSerializer.defaults()}) {
-    return Item(
-      id: serializer.fromJson<int>(json['id']),
-      item: serializer.fromJson<String>(json['item']),
-      priority: serializer.fromJson<int>(json['priority']),
-      checked: serializer.fromJson<bool>(json['checked']),
-      position: serializer.fromJson<int>(json['position']),
-    );
-  }
   @override
-  Map<String, dynamic> toJson(
-      {ValueSerializer serializer = const ValueSerializer.defaults()}) {
-    return {
-      'id': serializer.toJson<int>(id),
-      'item': serializer.toJson<String>(item),
-      'priority': serializer.toJson<int>(priority),
-      'checked': serializer.toJson<bool>(checked),
-      'position': serializer.toJson<int>(position),
-    };
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (!nullToAbsent || id != null) {
+      map['id'] = Variable<int>(id);
+    }
+    if (!nullToAbsent || item != null) {
+      map['item'] = Variable<String>(item);
+    }
+    if (!nullToAbsent || priority != null) {
+      map['priority'] = Variable<int>(priority);
+    }
+    if (!nullToAbsent || checked != null) {
+      map['checked'] = Variable<bool>(checked);
+    }
+    if (!nullToAbsent || position != null) {
+      map['position'] = Variable<int>(position);
+    }
+    return map;
   }
 
-  @override
-  T createCompanion<T extends UpdateCompanion<Item>>(bool nullToAbsent) {
+  ItemsCompanion toCompanion(bool nullToAbsent) {
     return ItemsCompanion(
       id: id == null && nullToAbsent ? const Value.absent() : Value(id),
       item: item == null && nullToAbsent ? const Value.absent() : Value(item),
@@ -72,7 +70,30 @@ class Item extends DataClass implements Insertable<Item> {
       position: position == null && nullToAbsent
           ? const Value.absent()
           : Value(position),
-    ) as T;
+    );
+  }
+
+  factory Item.fromJson(Map<String, dynamic> json,
+      {ValueSerializer serializer}) {
+    serializer ??= moorRuntimeOptions.defaultSerializer;
+    return Item(
+      id: serializer.fromJson<int>(json['id']),
+      item: serializer.fromJson<String>(json['item']),
+      priority: serializer.fromJson<int>(json['priority']),
+      checked: serializer.fromJson<bool>(json['checked']),
+      position: serializer.fromJson<int>(json['position']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer serializer}) {
+    serializer ??= moorRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'item': serializer.toJson<String>(item),
+      'priority': serializer.toJson<int>(priority),
+      'checked': serializer.toJson<bool>(checked),
+      'position': serializer.toJson<int>(position),
+    };
   }
 
   Item copyWith(
@@ -104,14 +125,14 @@ class Item extends DataClass implements Insertable<Item> {
           $mrjc(
               priority.hashCode, $mrjc(checked.hashCode, position.hashCode)))));
   @override
-  bool operator ==(other) =>
+  bool operator ==(dynamic other) =>
       identical(this, other) ||
       (other is Item &&
-          other.id == id &&
-          other.item == item &&
-          other.priority == priority &&
-          other.checked == checked &&
-          other.position == position);
+          other.id == this.id &&
+          other.item == this.item &&
+          other.priority == this.priority &&
+          other.checked == this.checked &&
+          other.position == this.position);
 }
 
 class ItemsCompanion extends UpdateCompanion<Item> {
@@ -127,6 +148,31 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     this.checked = const Value.absent(),
     this.position = const Value.absent(),
   });
+  ItemsCompanion.insert({
+    this.id = const Value.absent(),
+    @required String item,
+    @required int priority,
+    this.checked = const Value.absent(),
+    @required int position,
+  })  : item = Value(item),
+        priority = Value(priority),
+        position = Value(position);
+  static Insertable<Item> custom({
+    Expression<int> id,
+    Expression<String> item,
+    Expression<int> priority,
+    Expression<bool> checked,
+    Expression<int> position,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (item != null) 'item': item,
+      if (priority != null) 'priority': priority,
+      if (checked != null) 'checked': checked,
+      if (position != null) 'position': position,
+    });
+  }
+
   ItemsCompanion copyWith(
       {Value<int> id,
       Value<String> item,
@@ -140,6 +186,39 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       checked: checked ?? this.checked,
       position: position ?? this.position,
     );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (item.present) {
+      map['item'] = Variable<String>(item.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
+    if (checked.present) {
+      map['checked'] = Variable<bool>(checked.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('item: $item, ')
+          ..write('priority: $priority, ')
+          ..write('checked: $checked, ')
+          ..write('position: $position')
+          ..write(')'))
+        .toString();
   }
 }
 
@@ -206,36 +285,33 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
   @override
   final String actualTableName = 'items';
   @override
-  VerificationContext validateIntegrity(ItemsCompanion d,
+  VerificationContext validateIntegrity(Insertable<Item> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
-    if (d.id.present) {
-      context.handle(_idMeta, id.isAcceptableValue(d.id.value, _idMeta));
-    } else if (id.isRequired && isInserting) {
-      context.missing(_idMeta);
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id'], _idMeta));
     }
-    if (d.item.present) {
+    if (data.containsKey('item')) {
       context.handle(
-          _itemMeta, item.isAcceptableValue(d.item.value, _itemMeta));
-    } else if (item.isRequired && isInserting) {
+          _itemMeta, item.isAcceptableOrUnknown(data['item'], _itemMeta));
+    } else if (isInserting) {
       context.missing(_itemMeta);
     }
-    if (d.priority.present) {
+    if (data.containsKey('priority')) {
       context.handle(_priorityMeta,
-          priority.isAcceptableValue(d.priority.value, _priorityMeta));
-    } else if (priority.isRequired && isInserting) {
+          priority.isAcceptableOrUnknown(data['priority'], _priorityMeta));
+    } else if (isInserting) {
       context.missing(_priorityMeta);
     }
-    if (d.checked.present) {
+    if (data.containsKey('checked')) {
       context.handle(_checkedMeta,
-          checked.isAcceptableValue(d.checked.value, _checkedMeta));
-    } else if (checked.isRequired && isInserting) {
-      context.missing(_checkedMeta);
+          checked.isAcceptableOrUnknown(data['checked'], _checkedMeta));
     }
-    if (d.position.present) {
+    if (data.containsKey('position')) {
       context.handle(_positionMeta,
-          position.isAcceptableValue(d.position.value, _positionMeta));
-    } else if (position.isRequired && isInserting) {
+          position.isAcceptableOrUnknown(data['position'], _positionMeta));
+    } else if (isInserting) {
       context.missing(_positionMeta);
     }
     return context;
@@ -250,47 +326,27 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
   }
 
   @override
-  Map<String, Variable> entityToSql(ItemsCompanion d) {
-    final map = <String, Variable>{};
-    if (d.id.present) {
-      map['id'] = Variable<int, IntType>(d.id.value);
-    }
-    if (d.item.present) {
-      map['item'] = Variable<String, StringType>(d.item.value);
-    }
-    if (d.priority.present) {
-      map['priority'] = Variable<int, IntType>(d.priority.value);
-    }
-    if (d.checked.present) {
-      map['checked'] = Variable<bool, BoolType>(d.checked.value);
-    }
-    if (d.position.present) {
-      map['position'] = Variable<int, IntType>(d.position.value);
-    }
-    return map;
-  }
-
-  @override
   $ItemsTable createAlias(String alias) {
     return $ItemsTable(_db, alias);
   }
 }
 
-abstract class _$ChecklistDatabase extends GeneratedDatabase {
-  _$ChecklistDatabase(QueryExecutor e)
-      : super(const SqlTypeSystem.withDefaults(), e);
+abstract class _$AppDatabase extends GeneratedDatabase {
+  _$AppDatabase(QueryExecutor e) : super(SqlTypeSystem.defaultInstance, e);
   $ItemsTable _items;
   $ItemsTable get items => _items ??= $ItemsTable(this);
   ItemDao _itemDao;
-  ItemDao get itemDao => _itemDao ??= ItemDao(this as ChecklistDatabase);
+  ItemDao get itemDao => _itemDao ??= ItemDao(this as AppDatabase);
   @override
-  List<TableInfo> get allTables => [items];
+  Iterable<TableInfo> get allTables => allSchemaEntities.whereType<TableInfo>();
+  @override
+  List<DatabaseSchemaEntity> get allSchemaEntities => [items];
 }
 
 // **************************************************************************
 // DaoGenerator
 // **************************************************************************
 
-mixin _$ItemDaoMixin on DatabaseAccessor<ChecklistDatabase> {
-  $ItemsTable get items => db.items;
+mixin _$ItemDaoMixin on DatabaseAccessor<AppDatabase> {
+  $ItemsTable get items => attachedDatabase.items;
 }

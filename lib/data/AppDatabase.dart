@@ -1,6 +1,10 @@
-import 'package:moor_flutter/moor_flutter.dart';
+import 'package:moor/moor.dart';
+import 'package:moor/ffi.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'dart:io';
 
-part 'ChecklistDatabase.g.dart';
+part 'AppDatabase.g.dart';
 
 class Items extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -10,19 +14,28 @@ class Items extends Table {
   IntColumn get position => integer()();
 }
 
+LazyDatabase _openConnection() {
+  // the LazyDatabase util lets us find the right location for the file async.
+  return LazyDatabase(() async {
+    // put the database file, called db.sqlite here, into the documents folder
+    // for your app.
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'db.sqlite'));
+    return VmDatabase(file);
+  });
+}
+
 @UseMoor(tables: [Items], daos: [ItemDao])
-class ChecklistDatabase extends _$ChecklistDatabase {
-  ChecklistDatabase()
-      : super(FlutterQueryExecutor.inDatabaseFolder(
-            path: 'db.sqlite', logStatements: true));
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 1;
 }
 
 @UseDao(tables: [Items])
-class ItemDao extends DatabaseAccessor<ChecklistDatabase> with _$ItemDaoMixin {
-  final ChecklistDatabase db;
+class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
+  final AppDatabase db;
 
   ItemDao(this.db) : super(db);
 

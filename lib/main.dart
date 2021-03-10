@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shopping_checklist/checklist.dart';
-import 'package:shopping_checklist/data/ChecklistDatabase.dart';
+import 'package:shopping_checklist/data/AppDatabase.dart';
+import 'package:shopping_checklist/ui/checklist.dart';
+import 'package:shopping_checklist/ui/presets.dart';
 
 void main() => runApp(MyApp());
 
@@ -9,7 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Provider(
-      create: (_) => ChecklistDatabase().itemDao,
+      create: (_) => AppDatabase().itemDao,
       child: MaterialApp(
         theme: ThemeData(
           primaryColor: Colors.blue, //The primary color used by the app
