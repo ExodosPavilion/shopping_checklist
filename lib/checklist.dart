@@ -55,14 +55,14 @@ class _CheckListState extends State<CheckList> {
     );
   }
 
-  void _newItemScreenGenerator({Item editItem, int itemIndex = -1}) {
+  void _newItemScreenGenerator({Item focusItem, int itemIndex = -1}) {
     myFocusNode = FocusNode();
     myFocusNode.requestFocus();
     var tempPriority = 0;
 
-    if (editItem != null) {
-      tempPriority = editItem.priority;
-      myController.text = editItem.item;
+    if (focusItem != null) {
+      tempPriority = focusItem.priority;
+      myController.text = focusItem.item;
     }
 
     showDialog(
@@ -99,25 +99,30 @@ class _CheckListState extends State<CheckList> {
                   child: SimpleDialogOption(
                     onPressed: () {},
                     child: TextButton(
-                        onPressed: () {
+                        onPressed: () async {
                           super.setState(() {
                             if (itemIndex == -1) {
-                              Item item = Item(
+                              focusItem = Item(
                                   item: myController.text,
                                   priority: tempPriority,
                                   checked: false,
                                   position: availablePosition);
-                              _list.add(item);
-                              ChecklistDatabase().itemDao.insertItem(item);
+                              _list.add(focusItem);
                               availablePosition += 1;
                             } else {
-                              editItem.item = myController.text;
-                              editItem.priority = tempPriority;
-                              _list.insert(itemIndex, editItem);
-                              ChecklistDatabase().itemDao.updateItem(editItem);
+                              focusItem.item = myController.text;
+                              focusItem.priority = tempPriority;
+                              _list.insert(itemIndex, focusItem);
+                              ChecklistDatabase().itemDao.updateItem(focusItem);
                             }
                             myController.clear();
                           });
+                          if (itemIndex == -1) {
+                            var temp = await ChecklistDatabase()
+                                .itemDao
+                                .insertItem(focusItem);
+                            print(temp);
+                          }
                           Navigator.of(context).pop();
                         },
                         child: Text(
@@ -156,11 +161,13 @@ class _CheckListState extends State<CheckList> {
 
   void _updateList(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex == _list.length) {
-        _list.insert(newIndex - 1, _list.removeAt(oldIndex));
-      } else {
-        _list.insert(newIndex, _list.removeAt(oldIndex));
-      }
+      // Code ReorderableListView problem code from: https://gist.github.com/ffeu/e6ab522bdbcdfdfc7056bcc7ff2f67c7
+      // These two lines are workarounds for ReorderableListView problems
+      if (newIndex > _list.length) newIndex = _list.length;
+      if (oldIndex < newIndex) newIndex--;
+
+      _list.insert(newIndex, _list.removeAt(oldIndex));
+
       _updatePositions();
     });
   }
@@ -187,7 +194,7 @@ class _CheckListState extends State<CheckList> {
         } else {
           var itemPosition = _list.indexOf(item);
           var itemCopy = _list.removeAt(itemPosition);
-          _newItemScreenGenerator(editItem: itemCopy, itemIndex: itemPosition);
+          _newItemScreenGenerator(focusItem: itemCopy, itemIndex: itemPosition);
         }
       },
       child: ListTile(
