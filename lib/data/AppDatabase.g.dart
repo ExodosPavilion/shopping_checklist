@@ -486,7 +486,7 @@ class SetItem extends DataClass implements Insertable<SetItem> {
       @required this.item,
       @required this.priority,
       @required this.checked,
-      @required this.position,
+      this.position,
       @required this.presetName});
   factory SetItem.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String prefix}) {
@@ -644,11 +644,10 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
     @required String item,
     @required int priority,
     this.checked = const Value.absent(),
-    @required int position,
+    this.position = const Value.absent(),
     @required String presetName,
   })  : item = Value(item),
         priority = Value(priority),
-        position = Value(position),
         presetName = Value(presetName);
   static Insertable<SetItem> custom({
     Expression<int> id,
@@ -773,7 +772,7 @@ class $SetItemsTable extends SetItems with TableInfo<$SetItemsTable, SetItem> {
     return GeneratedIntColumn(
       'position',
       $tableName,
-      false,
+      true,
     );
   }
 
@@ -783,7 +782,7 @@ class $SetItemsTable extends SetItems with TableInfo<$SetItemsTable, SetItem> {
   GeneratedTextColumn get presetName => _presetName ??= _constructPresetName();
   GeneratedTextColumn _constructPresetName() {
     return GeneratedTextColumn('preset_name', $tableName, false,
-        $customConstraints: 'REFERENCES Preset(name)');
+        $customConstraints: 'REFERENCES Presets(name)');
   }
 
   @override
@@ -822,8 +821,6 @@ class $SetItemsTable extends SetItems with TableInfo<$SetItemsTable, SetItem> {
     if (data.containsKey('position')) {
       context.handle(_positionMeta,
           position.isAcceptableOrUnknown(data['position'], _positionMeta));
-    } else if (isInserting) {
-      context.missing(_positionMeta);
     }
     if (data.containsKey('preset_name')) {
       context.handle(
@@ -884,4 +881,5 @@ mixin _$PresetDaoMixin on DatabaseAccessor<AppDatabase> {
 }
 mixin _$SetItemDaoMixin on DatabaseAccessor<AppDatabase> {
   $SetItemsTable get setItems => attachedDatabase.setItems;
+  $PresetsTable get presets => attachedDatabase.presets;
 }

@@ -26,9 +26,9 @@ class SetItems extends Table {
   TextColumn get item => text().withLength(min: 1)();
   IntColumn get priority => integer()();
   BoolColumn get checked => boolean().withDefault(Constant(false))();
-  IntColumn get position => integer()();
+  IntColumn get position => integer().nullable()();
   TextColumn get presetName =>
-      text().customConstraint('REFERENCES Preset(name)')();
+      text().customConstraint('REFERENCES Presets(name)')();
 }
 
 class ItemSet extends Table {
@@ -96,10 +96,34 @@ class PresetDao extends DatabaseAccessor<AppDatabase> with _$PresetDaoMixin {
 
   PresetDao(this.db) : super(db);
 
-  Stream<List<ItemSet>> watchAllItems() {
+  Stream<List<Preset>> watchAllItems() {
     return (select(presets)
           ..orderBy([
             (t) => OrderingTerm(expression: t.name, mode: OrderingMode.asc)
+          ]))
+        .watch();
+  }
+
+  Future insertPreset(Insertable<Preset> preset) =>
+      into(presets).insert(preset);
+
+  Future updatePreset(Insertable<Preset> preset) =>
+      update(presets).replace(preset);
+
+  Future deletePreset(Insertable<Preset> preset) =>
+      delete(presets).delete(preset);
+}
+
+@UseDao(tables: [SetItems, Presets])
+class SetItemDao extends DatabaseAccessor<AppDatabase> with _$SetItemDaoMixin {
+  final AppDatabase db;
+
+  SetItemDao(this.db) : super(db);
+
+  Stream<List<ItemSet>> watchAllSetItems() {
+    return (select(setItems)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.asc)
           ]))
         .join(
           [
@@ -126,31 +150,21 @@ class PresetDao extends DatabaseAccessor<AppDatabase> with _$PresetDaoMixin {
         });
   }
 
-  Future insertItem(Insertable<Preset> preset) => into(presets).insert(preset);
-
-  Future updateItem(Insertable<Preset> preset) =>
-      update(presets).replace(preset);
-
-  Future deleteItem(Insertable<Preset> preset) =>
-      delete(presets).delete(preset);
-}
-
-@UseDao(tables: [SetItems])
-class SetItemDao extends DatabaseAccessor<AppDatabase> with _$SetItemDaoMixin {
-  final AppDatabase db;
-
-  SetItemDao(this.db) : super(db);
-
-  Stream<List<SetItem>> watchAllItems() {
-    return (select(setItems)).watch();
+  Future<List<SetItem>> getItemsforPreset(Preset preset) {
+    return (select(setItems)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.asc)
+          ])
+          ..where((t) => t.presetName.equals(preset.name)))
+        .get();
   }
 
-  Future insertItem(Insertable<SetItem> setItem) =>
+  Future insertSetItem(Insertable<SetItem> setItem) =>
       into(setItems).insert(setItem);
 
-  Future updateItem(Insertable<SetItem> setItem) =>
+  Future updateSetItem(Insertable<SetItem> setItem) =>
       update(setItems).replace(setItem);
 
-  Future deleteItem(Insertable<SetItem> setItem) =>
+  Future deleteSetItem(Insertable<SetItem> setItem) =>
       delete(setItems).delete(setItem);
 }

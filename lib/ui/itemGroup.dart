@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
+import 'package:shopping_checklist/widgets/newItemGroupDialog.dart';
 
 class ItemGroup extends StatefulWidget {
   @override
@@ -24,12 +25,17 @@ class _ItemGroupState extends State<ItemGroup> {
     );
   }
 
-  void _newPresetScreenGenerator(
-      {PresetsCompanion editItem, bool editing = false}) {
-    //TODO: Create a preset screen generator. maybe in a different file?
+  void _newPresetScreenGenerator() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          //return StatefulBuilder(builder: (context, setState) {
+          return NewItemGroupDialog();
+          //});
+        });
   }
 
-  StreamBuilder<List<ItemSet>> _buildList(BuildContext context) {
+  StreamBuilder<List<Preset>> _buildList(BuildContext context) {
     //builds a list of items using the rows provided by _buildRow
 /*     return ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -40,38 +46,76 @@ class _ItemGroupState extends State<ItemGroup> {
     final dao = Provider.of<PresetDao>(context);
     return StreamBuilder(
       stream: dao.watchAllItems(),
-      builder: (context, AsyncSnapshot<List<ItemSet>> snapshot) {
+      builder: (context, AsyncSnapshot<List<Preset>> snapshot) {
         final groups = snapshot.data ?? [];
 
         return ListView.builder(
           itemCount: groups.length,
           itemBuilder: (BuildContext context, int index) {
             final group = groups[index];
-            return _buildRow(group, PresetDao);
+            print(group);
+            print('test');
+            return _buildRow(group, dao);
           },
         );
       },
     );
   }
 
-  Widget _buildRow(preset, presetDao) {
+  Widget _buildRow(Preset preset, PresetDao presetDao) {
     return Dismissible(
       key: UniqueKey(),
       background: _editSlide(),
       secondaryBackground: _deleteSlide(),
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
-          presetDao.deleteItem(preset);
+          presetDao.deletePreset(preset);
         } else {
-          _newPresetScreenGenerator(
-              editItem: preset.toCompanion(false), editing: true);
+          _newPresetScreenGenerator();
         }
       },
       child: ListTile(
-        title: Text(preset.item),
+        title: Text(preset.name),
+        onTap: () => _showPresetsDialog(preset, presetDao),
       ),
     );
   }
+
+  void _showPresetsDialog(Preset preset, PresetDao dao) async {
+    final setItemDao = Provider.of<SetItemDao>(context, listen: false);
+
+    List<SetItem> _list = await setItemDao.getItemsforPreset(preset);
+
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(preset.name),
+            content: Container(
+              height: 300.0,
+              width: 300.0,
+              child: ListView.builder(
+                itemCount: _list.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return ListTile(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(
+                            300))), //TODO: Find out why this doesn't work
+                    title: Text(_list[index].item),
+                    tileColor: _list[index].priority == 0
+                        ? Colors.yellow[300]
+                        : _list[index].priority == 1
+                            ? Colors.amber
+                            : Colors.red,
+                  );
+                },
+              ),
+            ),
+          );
+        });
+  }
+
+  Widget _dialogTileGenerator(BuildContext context, List<SetItem> setItems) {}
 
   Container _editSlide() {
     return Container(
