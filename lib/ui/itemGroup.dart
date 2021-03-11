@@ -115,8 +115,6 @@ class _ItemGroupState extends State<ItemGroup> {
         });
   }
 
-  Widget _dialogTileGenerator(BuildContext context, List<SetItem> setItems) {}
-
   Container _editSlide() {
     return Container(
         color: Colors.green,
