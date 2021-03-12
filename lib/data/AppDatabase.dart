@@ -152,10 +152,10 @@ class SetItemDao extends DatabaseAccessor<AppDatabase> with _$SetItemDaoMixin {
 
   Future<List<SetItem>> getItemsforPreset(Preset preset) {
     return (select(setItems)
+          ..where((t) => t.presetName.equals(preset.name))
           ..orderBy([
-            (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.asc)
-          ])
-          ..where((t) => t.presetName.equals(preset.name)))
+            (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.desc)
+          ]))
         .get();
   }
 

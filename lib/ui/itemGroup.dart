@@ -53,8 +53,6 @@ class _ItemGroupState extends State<ItemGroup> {
           itemCount: groups.length,
           itemBuilder: (BuildContext context, int index) {
             final group = groups[index];
-            print(group);
-            print('test');
             return _buildRow(group, dao);
           },
         );
@@ -67,8 +65,14 @@ class _ItemGroupState extends State<ItemGroup> {
       key: UniqueKey(),
       background: _editSlide(),
       secondaryBackground: _deleteSlide(),
-      onDismissed: (direction) {
+      onDismissed: (direction) async {
         if (direction == DismissDirection.endToStart) {
+          final setItemDao = Provider.of<SetItemDao>(context, listen: false);
+          List<SetItem> _list = await setItemDao.getItemsforPreset(preset);
+
+          for (int i = 0; i < _list.length; i++) {
+            setItemDao.deleteSetItem(_list[i]);
+          }
           presetDao.deletePreset(preset);
         } else {
           _newPresetScreenGenerator();
@@ -83,7 +87,6 @@ class _ItemGroupState extends State<ItemGroup> {
 
   void _showPresetsDialog(Preset preset, PresetDao dao) async {
     final setItemDao = Provider.of<SetItemDao>(context, listen: false);
-
     List<SetItem> _list = await setItemDao.getItemsforPreset(preset);
 
     showDialog(
@@ -97,16 +100,19 @@ class _ItemGroupState extends State<ItemGroup> {
               child: ListView.builder(
                 itemCount: _list.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return ListTile(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(
-                            300))), //TODO: Find out why this doesn't work
-                    title: Text(_list[index].item),
-                    tileColor: _list[index].priority == 0
-                        ? Colors.yellow[300]
-                        : _list[index].priority == 1
-                            ? Colors.amber
-                            : Colors.red,
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 0.5),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(7),
+                      child: ListTile(
+                        title: Text(_list[index].item),
+                        tileColor: _list[index].priority == 0
+                            ? Colors.yellow[300]
+                            : _list[index].priority == 1
+                                ? Colors.amber
+                                : Colors.red,
+                      ),
+                    ),
                   );
                 },
               ),

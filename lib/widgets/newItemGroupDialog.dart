@@ -11,6 +11,7 @@ class _NewItemGroupDialogState extends State<NewItemGroupDialog> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _formController;
   static List<String> itemList = [null];
+  static List<int> priorityList = [0];
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _NewItemGroupDialogState extends State<NewItemGroupDialog> {
   Widget build(BuildContext context) {
     final setItemDao = Provider.of<SetItemDao>(context, listen: false);
     final presetDao = Provider.of<PresetDao>(context, listen: false);
+    bool disableRemoveButton = itemList.length < 1;
 
     return SimpleDialog(
       title: const Text('Enter preset info:'),
@@ -59,26 +61,69 @@ class _NewItemGroupDialogState extends State<NewItemGroupDialog> {
                   'Add Items',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                 ),
-                ..._getFriends(),
+                ..._getTextFields(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                        onPressed: () => {
+                              itemList.add(null),
+                              priorityList.add(0),
+                              setState(() {})
+                            },
+                        child: Text('Add New Item'),
+                        style: TextButton.styleFrom(
+                            primary: Colors.white,
+                            backgroundColor: Colors.green)),
+                    TextButton(
+                        onPressed: () => {
+                              if (itemList.length >= 1)
+                                {
+                                  disableRemoveButton = false,
+                                  itemList.removeAt(itemList.length - 1),
+                                  priorityList
+                                      .removeAt(priorityList.length - 1),
+                                }
+                              else
+                                {
+                                  disableRemoveButton = true,
+                                  null,
+                                },
+                              setState(() {})
+                            },
+                        child: Text("Remove Last Item"),
+                        style: TextButton.styleFrom(
+                            primary: Colors.white,
+                            backgroundColor:
+                                disableRemoveButton ? Colors.grey : Colors.red))
+                  ],
+                ),
                 SizedBox(
                   height: 40,
                 ),
-                TextButton(
-                  child: Text('Submit'),
-                  onPressed: () {
-                    if (_formKey.currentState.validate()) {
-                      _formKey.currentState.save();
-                      presetDao.insertPreset(
-                          PresetsCompanion.insert(name: _formController.text));
-                      for (int i = 0; i < itemList.length; i++) {
-                        setItemDao.insertSetItem(SetItemsCompanion.insert(
-                            item: itemList[i],
-                            priority: 0,
-                            presetName: _formController.text));
+                Container(
+                  alignment: Alignment.bottomRight,
+                  child: TextButton(
+                    child: Text('Submit'),
+                    onPressed: () {
+                      if (_formKey.currentState.validate()) {
+                        _formKey.currentState.save();
+                        presetDao.insertPreset(PresetsCompanion.insert(
+                            name: _formController.text));
+                        for (int i = 0; i < itemList.length; i++) {
+                          setItemDao.insertSetItem(SetItemsCompanion.insert(
+                              item: itemList[i],
+                              priority: priorityList[i],
+                              presetName: _formController.text));
+                        }
+                        itemList = [null];
+                        priorityList = [0];
+                        Navigator.of(context).pop();
                       }
-                      Navigator.of(context).pop();
-                    }
-                  },
+                    },
+                    style: TextButton.styleFrom(
+                        primary: Colors.white, backgroundColor: Colors.blue),
+                  ),
                 ),
               ],
             ),
@@ -88,50 +133,43 @@ class _NewItemGroupDialogState extends State<NewItemGroupDialog> {
     );
   }
 
-  /// get firends text-fields
-  List<Widget> _getFriends() {
-    List<Widget> friendsTextFields = [];
+  /// get text-fields
+  List<Widget> _getTextFields() {
+    List<Widget> textFields = [];
     for (int i = 0; i < itemList.length; i++) {
-      friendsTextFields.add(Padding(
+      textFields.add(Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(child: ItemTextField(i)),
+            Expanded(flex: 2, child: ItemTextField(i)),
             SizedBox(
               width: 16,
             ),
-            // we need add button at last friends row
-            _addRemoveButton(i == itemList.length - 1, i),
+            Expanded(flex: 1, child: _addPriorityDropDown(i)),
           ],
         ),
       ));
     }
-    return friendsTextFields;
+    return textFields;
   }
 
-  /// add / remove button
-  Widget _addRemoveButton(bool add, int index) {
-    return InkWell(
-      onTap: () {
-        if (add) {
-          // add new text-fields at the top of all friends textfields
-          itemList.insert(0, null);
-        } else
-          itemList.removeAt(index);
-        setState(() {});
+  Widget _addPriorityDropDown(int index) {
+    var tempPriority = priorityList[index];
+
+    return DropdownButtonFormField(
+      value: tempPriority,
+      items: <DropdownMenuItem>[
+        DropdownMenuItem(child: Text("High"), value: 2),
+        DropdownMenuItem(child: Text("Medium"), value: 1),
+        DropdownMenuItem(child: Text("Low"), value: 0),
+      ],
+      onChanged: (priority) {
+        priorityList[index] = priority;
+        setState(() {
+          tempPriority = priority;
+        });
       },
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: (add) ? Colors.green : Colors.red,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Icon(
-          (add) ? Icons.add : Icons.remove,
-          color: Colors.white,
-        ),
-      ),
     );
   }
 }
