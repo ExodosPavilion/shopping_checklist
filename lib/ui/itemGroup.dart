@@ -63,20 +63,17 @@ class _ItemGroupState extends State<ItemGroup> {
   Widget _buildRow(Preset preset, PresetDao presetDao) {
     return Dismissible(
       key: UniqueKey(),
-      background: _editSlide(),
-      secondaryBackground: _deleteSlide(),
+      //background: _editSlide(),
+      //secondaryBackground: _deleteSlide(),
+      background: _deleteSlide(),
       onDismissed: (direction) async {
-        if (direction == DismissDirection.endToStart) {
-          final setItemDao = Provider.of<SetItemDao>(context, listen: false);
-          List<SetItem> _list = await setItemDao.getItemsforPreset(preset);
+        final setItemDao = Provider.of<SetItemDao>(context, listen: false);
+        List<SetItem> _list = await setItemDao.getItemsforPreset(preset);
 
-          for (int i = 0; i < _list.length; i++) {
-            setItemDao.deleteSetItem(_list[i]);
-          }
-          presetDao.deletePreset(preset);
-        } else {
-          _newPresetScreenGenerator();
+        for (int i = 0; i < _list.length; i++) {
+          setItemDao.deleteSetItem(_list[i]);
         }
+        presetDao.deletePreset(preset);
       },
       child: ListTile(
         title: Text(preset.name),
@@ -121,7 +118,7 @@ class _ItemGroupState extends State<ItemGroup> {
         });
   }
 
-  Container _editSlide() {
+/*   Container _editSlide() {
     return Container(
         color: Colors.green,
         child: Align(
@@ -139,14 +136,15 @@ class _ItemGroupState extends State<ItemGroup> {
           ),
           alignment: Alignment.centerLeft,
         ));
-  }
+  } */
 
   Container _deleteSlide() {
     return Container(
         color: Colors.red,
         child: Align(
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            //mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Icon(
                 Icons.delete,

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/ui/itemGroup.dart';
-import 'package:shopping_checklist/widgets/newItemGroupDialog.dart';
 
 void main() => runApp(MyApp());
 

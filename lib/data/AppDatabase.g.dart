@@ -332,19 +332,25 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
 }
 
 class Preset extends DataClass implements Insertable<Preset> {
+  final int id;
   final String name;
-  Preset({@required this.name});
+  Preset({@required this.id, @required this.name});
   factory Preset.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String prefix}) {
     final effectivePrefix = prefix ?? '';
+    final intType = db.typeSystem.forDartType<int>();
     final stringType = db.typeSystem.forDartType<String>();
     return Preset(
+      id: intType.mapFromDatabaseResponse(data['${effectivePrefix}id']),
       name: stringType.mapFromDatabaseResponse(data['${effectivePrefix}name']),
     );
   }
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (!nullToAbsent || id != null) {
+      map['id'] = Variable<int>(id);
+    }
     if (!nullToAbsent || name != null) {
       map['name'] = Variable<String>(name);
     }
@@ -353,6 +359,7 @@ class Preset extends DataClass implements Insertable<Preset> {
 
   PresetsCompanion toCompanion(bool nullToAbsent) {
     return PresetsCompanion(
+      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
       name: name == null && nullToAbsent ? const Value.absent() : Value(name),
     );
   }
@@ -361,6 +368,7 @@ class Preset extends DataClass implements Insertable<Preset> {
       {ValueSerializer serializer}) {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return Preset(
+      id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
     );
   }
@@ -368,44 +376,56 @@ class Preset extends DataClass implements Insertable<Preset> {
   Map<String, dynamic> toJson({ValueSerializer serializer}) {
     serializer ??= moorRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
     };
   }
 
-  Preset copyWith({String name}) => Preset(
+  Preset copyWith({int id, String name}) => Preset(
+        id: id ?? this.id,
         name: name ?? this.name,
       );
   @override
   String toString() {
-    return (StringBuffer('Preset(')..write('name: $name')..write(')'))
+    return (StringBuffer('Preset(')
+          ..write('id: $id, ')
+          ..write('name: $name')
+          ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => $mrjf(name.hashCode);
+  int get hashCode => $mrjf($mrjc(id.hashCode, name.hashCode));
   @override
   bool operator ==(dynamic other) =>
-      identical(this, other) || (other is Preset && other.name == this.name);
+      identical(this, other) ||
+      (other is Preset && other.id == this.id && other.name == this.name);
 }
 
 class PresetsCompanion extends UpdateCompanion<Preset> {
+  final Value<int> id;
   final Value<String> name;
   const PresetsCompanion({
+    this.id = const Value.absent(),
     this.name = const Value.absent(),
   });
   PresetsCompanion.insert({
+    this.id = const Value.absent(),
     @required String name,
   }) : name = Value(name);
   static Insertable<Preset> custom({
+    Expression<int> id,
     Expression<String> name,
   }) {
     return RawValuesInsertable({
+      if (id != null) 'id': id,
       if (name != null) 'name': name,
     });
   }
 
-  PresetsCompanion copyWith({Value<String> name}) {
+  PresetsCompanion copyWith({Value<int> id, Value<String> name}) {
     return PresetsCompanion(
+      id: id ?? this.id,
       name: name ?? this.name,
     );
   }
@@ -413,6 +433,9 @@ class PresetsCompanion extends UpdateCompanion<Preset> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
@@ -421,7 +444,10 @@ class PresetsCompanion extends UpdateCompanion<Preset> {
 
   @override
   String toString() {
-    return (StringBuffer('PresetsCompanion(')..write('name: $name')..write(')'))
+    return (StringBuffer('PresetsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name')
+          ..write(')'))
         .toString();
   }
 }
@@ -430,6 +456,15 @@ class $PresetsTable extends Presets with TableInfo<$PresetsTable, Preset> {
   final GeneratedDatabase _db;
   final String _alias;
   $PresetsTable(this._db, [this._alias]);
+  final VerificationMeta _idMeta = const VerificationMeta('id');
+  GeneratedIntColumn _id;
+  @override
+  GeneratedIntColumn get id => _id ??= _constructId();
+  GeneratedIntColumn _constructId() {
+    return GeneratedIntColumn('id', $tableName, false,
+        hasAutoIncrement: true, declaredAsPrimaryKey: true);
+  }
+
   final VerificationMeta _nameMeta = const VerificationMeta('name');
   GeneratedTextColumn _name;
   @override
@@ -439,7 +474,7 @@ class $PresetsTable extends Presets with TableInfo<$PresetsTable, Preset> {
   }
 
   @override
-  List<GeneratedColumn> get $columns => [name];
+  List<GeneratedColumn> get $columns => [id, name];
   @override
   $PresetsTable get asDslTable => this;
   @override
@@ -451,6 +486,9 @@ class $PresetsTable extends Presets with TableInfo<$PresetsTable, Preset> {
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id'], _idMeta));
+    }
     if (data.containsKey('name')) {
       context.handle(
           _nameMeta, name.isAcceptableOrUnknown(data['name'], _nameMeta));
@@ -461,7 +499,7 @@ class $PresetsTable extends Presets with TableInfo<$PresetsTable, Preset> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {name};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   Preset map(Map<String, dynamic> data, {String tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : null;
@@ -480,14 +518,14 @@ class SetItem extends DataClass implements Insertable<SetItem> {
   final int priority;
   final bool checked;
   final int position;
-  final String presetName;
+  final int presetId;
   SetItem(
       {@required this.id,
       @required this.item,
       @required this.priority,
       @required this.checked,
       this.position,
-      @required this.presetName});
+      @required this.presetId});
   factory SetItem.fromData(Map<String, dynamic> data, GeneratedDatabase db,
       {String prefix}) {
     final effectivePrefix = prefix ?? '';
@@ -503,8 +541,8 @@ class SetItem extends DataClass implements Insertable<SetItem> {
           boolType.mapFromDatabaseResponse(data['${effectivePrefix}checked']),
       position:
           intType.mapFromDatabaseResponse(data['${effectivePrefix}position']),
-      presetName: stringType
-          .mapFromDatabaseResponse(data['${effectivePrefix}preset_name']),
+      presetId:
+          intType.mapFromDatabaseResponse(data['${effectivePrefix}preset_id']),
     );
   }
   @override
@@ -525,8 +563,8 @@ class SetItem extends DataClass implements Insertable<SetItem> {
     if (!nullToAbsent || position != null) {
       map['position'] = Variable<int>(position);
     }
-    if (!nullToAbsent || presetName != null) {
-      map['preset_name'] = Variable<String>(presetName);
+    if (!nullToAbsent || presetId != null) {
+      map['preset_id'] = Variable<int>(presetId);
     }
     return map;
   }
@@ -544,9 +582,9 @@ class SetItem extends DataClass implements Insertable<SetItem> {
       position: position == null && nullToAbsent
           ? const Value.absent()
           : Value(position),
-      presetName: presetName == null && nullToAbsent
+      presetId: presetId == null && nullToAbsent
           ? const Value.absent()
-          : Value(presetName),
+          : Value(presetId),
     );
   }
 
@@ -559,7 +597,7 @@ class SetItem extends DataClass implements Insertable<SetItem> {
       priority: serializer.fromJson<int>(json['priority']),
       checked: serializer.fromJson<bool>(json['checked']),
       position: serializer.fromJson<int>(json['position']),
-      presetName: serializer.fromJson<String>(json['presetName']),
+      presetId: serializer.fromJson<int>(json['presetId']),
     );
   }
   @override
@@ -571,7 +609,7 @@ class SetItem extends DataClass implements Insertable<SetItem> {
       'priority': serializer.toJson<int>(priority),
       'checked': serializer.toJson<bool>(checked),
       'position': serializer.toJson<int>(position),
-      'presetName': serializer.toJson<String>(presetName),
+      'presetId': serializer.toJson<int>(presetId),
     };
   }
 
@@ -581,14 +619,14 @@ class SetItem extends DataClass implements Insertable<SetItem> {
           int priority,
           bool checked,
           int position,
-          String presetName}) =>
+          int presetId}) =>
       SetItem(
         id: id ?? this.id,
         item: item ?? this.item,
         priority: priority ?? this.priority,
         checked: checked ?? this.checked,
         position: position ?? this.position,
-        presetName: presetName ?? this.presetName,
+        presetId: presetId ?? this.presetId,
       );
   @override
   String toString() {
@@ -598,7 +636,7 @@ class SetItem extends DataClass implements Insertable<SetItem> {
           ..write('priority: $priority, ')
           ..write('checked: $checked, ')
           ..write('position: $position, ')
-          ..write('presetName: $presetName')
+          ..write('presetId: $presetId')
           ..write(')'))
         .toString();
   }
@@ -611,7 +649,7 @@ class SetItem extends DataClass implements Insertable<SetItem> {
           $mrjc(
               priority.hashCode,
               $mrjc(checked.hashCode,
-                  $mrjc(position.hashCode, presetName.hashCode))))));
+                  $mrjc(position.hashCode, presetId.hashCode))))));
   @override
   bool operator ==(dynamic other) =>
       identical(this, other) ||
@@ -621,7 +659,7 @@ class SetItem extends DataClass implements Insertable<SetItem> {
           other.priority == this.priority &&
           other.checked == this.checked &&
           other.position == this.position &&
-          other.presetName == this.presetName);
+          other.presetId == this.presetId);
 }
 
 class SetItemsCompanion extends UpdateCompanion<SetItem> {
@@ -630,14 +668,14 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
   final Value<int> priority;
   final Value<bool> checked;
   final Value<int> position;
-  final Value<String> presetName;
+  final Value<int> presetId;
   const SetItemsCompanion({
     this.id = const Value.absent(),
     this.item = const Value.absent(),
     this.priority = const Value.absent(),
     this.checked = const Value.absent(),
     this.position = const Value.absent(),
-    this.presetName = const Value.absent(),
+    this.presetId = const Value.absent(),
   });
   SetItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -645,17 +683,17 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
     @required int priority,
     this.checked = const Value.absent(),
     this.position = const Value.absent(),
-    @required String presetName,
+    @required int presetId,
   })  : item = Value(item),
         priority = Value(priority),
-        presetName = Value(presetName);
+        presetId = Value(presetId);
   static Insertable<SetItem> custom({
     Expression<int> id,
     Expression<String> item,
     Expression<int> priority,
     Expression<bool> checked,
     Expression<int> position,
-    Expression<String> presetName,
+    Expression<int> presetId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -663,7 +701,7 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
       if (priority != null) 'priority': priority,
       if (checked != null) 'checked': checked,
       if (position != null) 'position': position,
-      if (presetName != null) 'preset_name': presetName,
+      if (presetId != null) 'preset_id': presetId,
     });
   }
 
@@ -673,14 +711,14 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
       Value<int> priority,
       Value<bool> checked,
       Value<int> position,
-      Value<String> presetName}) {
+      Value<int> presetId}) {
     return SetItemsCompanion(
       id: id ?? this.id,
       item: item ?? this.item,
       priority: priority ?? this.priority,
       checked: checked ?? this.checked,
       position: position ?? this.position,
-      presetName: presetName ?? this.presetName,
+      presetId: presetId ?? this.presetId,
     );
   }
 
@@ -702,8 +740,8 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
     if (position.present) {
       map['position'] = Variable<int>(position.value);
     }
-    if (presetName.present) {
-      map['preset_name'] = Variable<String>(presetName.value);
+    if (presetId.present) {
+      map['preset_id'] = Variable<int>(presetId.value);
     }
     return map;
   }
@@ -716,7 +754,7 @@ class SetItemsCompanion extends UpdateCompanion<SetItem> {
           ..write('priority: $priority, ')
           ..write('checked: $checked, ')
           ..write('position: $position, ')
-          ..write('presetName: $presetName')
+          ..write('presetId: $presetId')
           ..write(')'))
         .toString();
   }
@@ -776,18 +814,18 @@ class $SetItemsTable extends SetItems with TableInfo<$SetItemsTable, SetItem> {
     );
   }
 
-  final VerificationMeta _presetNameMeta = const VerificationMeta('presetName');
-  GeneratedTextColumn _presetName;
+  final VerificationMeta _presetIdMeta = const VerificationMeta('presetId');
+  GeneratedIntColumn _presetId;
   @override
-  GeneratedTextColumn get presetName => _presetName ??= _constructPresetName();
-  GeneratedTextColumn _constructPresetName() {
-    return GeneratedTextColumn('preset_name', $tableName, false,
-        $customConstraints: 'REFERENCES Presets(name)');
+  GeneratedIntColumn get presetId => _presetId ??= _constructPresetId();
+  GeneratedIntColumn _constructPresetId() {
+    return GeneratedIntColumn('preset_id', $tableName, false,
+        $customConstraints: 'REFERENCES Presets(id)');
   }
 
   @override
   List<GeneratedColumn> get $columns =>
-      [id, item, priority, checked, position, presetName];
+      [id, item, priority, checked, position, presetId];
   @override
   $SetItemsTable get asDslTable => this;
   @override
@@ -822,13 +860,11 @@ class $SetItemsTable extends SetItems with TableInfo<$SetItemsTable, SetItem> {
       context.handle(_positionMeta,
           position.isAcceptableOrUnknown(data['position'], _positionMeta));
     }
-    if (data.containsKey('preset_name')) {
-      context.handle(
-          _presetNameMeta,
-          presetName.isAcceptableOrUnknown(
-              data['preset_name'], _presetNameMeta));
+    if (data.containsKey('preset_id')) {
+      context.handle(_presetIdMeta,
+          presetId.isAcceptableOrUnknown(data['preset_id'], _presetIdMeta));
     } else if (isInserting) {
-      context.missing(_presetNameMeta);
+      context.missing(_presetIdMeta);
     }
     return context;
   }
@@ -877,7 +913,6 @@ mixin _$ItemDaoMixin on DatabaseAccessor<AppDatabase> {
 }
 mixin _$PresetDaoMixin on DatabaseAccessor<AppDatabase> {
   $PresetsTable get presets => attachedDatabase.presets;
-  $SetItemsTable get setItems => attachedDatabase.setItems;
 }
 mixin _$SetItemDaoMixin on DatabaseAccessor<AppDatabase> {
   $SetItemsTable get setItems => attachedDatabase.setItems;

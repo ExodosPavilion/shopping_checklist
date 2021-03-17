@@ -105,16 +105,19 @@ class _NewItemGroupDialogState extends State<NewItemGroupDialog> {
                   alignment: Alignment.bottomRight,
                   child: TextButton(
                     child: Text('Submit'),
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState.validate()) {
                         _formKey.currentState.save();
                         presetDao.insertPreset(PresetsCompanion.insert(
                             name: _formController.text));
                         for (int i = 0; i < itemList.length; i++) {
                           setItemDao.insertSetItem(SetItemsCompanion.insert(
-                              item: itemList[i],
-                              priority: priorityList[i],
-                              presetName: _formController.text));
+                            item: itemList[i],
+                            priority: priorityList[i],
+                            presetId: (await (presetDao
+                                    .getPresetId(_formController.text)))[0]
+                                .id,
+                          ));
                         }
                         itemList = [null];
                         priorityList = [0];

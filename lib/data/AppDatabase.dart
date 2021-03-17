@@ -15,10 +15,8 @@ class Items extends Table {
 }
 
 class Presets extends Table {
+  IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1)();
-
-  @override
-  Set<Column> get primaryKey => {name};
 }
 
 class SetItems extends Table {
@@ -27,8 +25,8 @@ class SetItems extends Table {
   IntColumn get priority => integer()();
   BoolColumn get checked => boolean().withDefault(Constant(false))();
   IntColumn get position => integer().nullable()();
-  TextColumn get presetName =>
-      text().customConstraint('REFERENCES Presets(name)')();
+  IntColumn get presetId =>
+      integer().customConstraint('REFERENCES Presets(id)')();
 }
 
 class ItemSet extends Table {
@@ -90,7 +88,7 @@ class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
   Future deleteItem(Insertable<Item> item) => delete(items).delete(item);
 }
 
-@UseDao(tables: [Presets, SetItems])
+@UseDao(tables: [Presets])
 class PresetDao extends DatabaseAccessor<AppDatabase> with _$PresetDaoMixin {
   final AppDatabase db;
 
@@ -112,6 +110,10 @@ class PresetDao extends DatabaseAccessor<AppDatabase> with _$PresetDaoMixin {
 
   Future deletePreset(Insertable<Preset> preset) =>
       delete(presets).delete(preset);
+
+  Future<List<Preset>> getPresetId(String presetName) {
+    return (select(presets)..where((t) => t.name.equals(presetName))).get();
+  }
 }
 
 @UseDao(tables: [SetItems, Presets])
@@ -127,7 +129,7 @@ class SetItemDao extends DatabaseAccessor<AppDatabase> with _$SetItemDaoMixin {
           ]))
         .join(
           [
-            leftOuterJoin(presets, presets.name.equalsExp(setItems.presetName)),
+            leftOuterJoin(presets, presets.id.equalsExp(setItems.presetId)),
           ],
         )
         .watch()
@@ -152,7 +154,7 @@ class SetItemDao extends DatabaseAccessor<AppDatabase> with _$SetItemDaoMixin {
 
   Future<List<SetItem>> getItemsforPreset(Preset preset) {
     return (select(setItems)
-          ..where((t) => t.presetName.equals(preset.name))
+          ..where((t) => t.presetId.equals(preset.id))
           ..orderBy([
             (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.desc)
           ]))
