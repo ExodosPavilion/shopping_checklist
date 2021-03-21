@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
-import 'package:shopping_checklist/ui/itemGroup.dart';
+import 'package:shopping_checklist/widgets/DrawerStateInfo.dart';
 
 void main() => runApp(MyApp());
 
@@ -16,6 +16,8 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) => db.itemDao),
         Provider(create: (_) => db.presetDao),
         Provider(create: (_) => db.setItemDao),
+        ChangeNotifierProvider<DrawerStateInfo>(
+            create: (_) => DrawerStateInfo())
       ],
       child: MaterialApp(
         theme: ThemeData(
@@ -23,7 +25,7 @@ class MyApp extends StatelessWidget {
         ),
         home: Scaffold(
           body: Center(
-            child: ItemGroup(), //CheckList class that builds the main app page
+            child: CheckList(), //CheckList class that builds the main app page
           ),
         ),
         debugShowCheckedModeBanner:

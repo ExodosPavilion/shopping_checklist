@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
+import 'package:shopping_checklist/widgets/AppDrawer.dart';
 import 'package:shopping_checklist/widgets/newItemGroupDialog.dart';
 
 class ItemGroup extends StatefulWidget {
@@ -16,6 +17,7 @@ class _ItemGroupState extends State<ItemGroup> {
         title: Text('Shopping CheckList'),
         //actions: [IconButton(icon: Icon(Icons.menu), onPressed: _navbar),], //used to get a navbar on the right (not what we need, lookup: drawer)
       ),
+      drawer: AppDrawer("ItemGroup"),
       floatingActionButton: FloatingActionButton(
         onPressed:
             _newPresetScreenGenerator, //Function that runs when the button is pressed

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:moor/moor.dart';
 import 'package:provider/provider.dart';
+import 'package:shopping_checklist/widgets/AppDrawer.dart';
 
 class CheckList extends StatefulWidget {
   @override
@@ -11,7 +12,6 @@ class CheckList extends StatefulWidget {
 class _CheckListState extends State<CheckList> {
   //the next position available
   int availablePosition = 0;
-
   final myController = TextEditingController(); //used by the text field later
   FocusNode myFocusNode; //also used by the text field later
 
@@ -38,6 +38,7 @@ class _CheckListState extends State<CheckList> {
         title: Text('Shopping CheckList'),
         //actions: [IconButton(icon: Icon(Icons.menu), onPressed: _navbar),], //used to get a navbar on the right (not what we need, lookup: drawer)
       ),
+      drawer: AppDrawer("CheckList"),
       floatingActionButton: FloatingActionButton(
         onPressed:
             _newItemScreenGenerator, //Function that runs when the button is pressed
