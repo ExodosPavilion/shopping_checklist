@@ -74,6 +74,42 @@ class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
   ItemDao(this.db) : super(db);
 
   Stream<List<Item>> watchAllItems() {
+    return (select(items)).watch();
+  }
+
+  Stream<List<Item>> watchItemsSortedByNameAsc() {
+    return (select(items)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.item, mode: OrderingMode.asc)
+          ]))
+        .watch();
+  }
+
+  Stream<List<Item>> watchItemsSortedByNameDesc() {
+    return (select(items)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.item, mode: OrderingMode.desc)
+          ]))
+        .watch();
+  }
+
+  Stream<List<Item>> watchItemsSortedByPriorityAsc() {
+    return (select(items)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.asc)
+          ]))
+        .watch();
+  }
+
+  Stream<List<Item>> watchItemsSortedByPriorityDesc() {
+    return (select(items)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.priority, mode: OrderingMode.desc)
+          ]))
+        .watch();
+  }
+
+  Stream<List<Item>> watchItemsSortedByPosition() {
     return (select(items)
           ..orderBy([
             (t) => OrderingTerm(expression: t.position, mode: OrderingMode.asc)

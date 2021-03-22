@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:shopping_checklist/widgets/AppDrawer.dart';
 import 'package:shopping_checklist/widgets/newItemGroupDialog.dart';
@@ -10,6 +11,24 @@ class ItemGroup extends StatefulWidget {
 }
 
 class _ItemGroupState extends State<ItemGroup> {
+  int availablePositionsInCheckList;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailablePositions();
+  }
+
+  void _loadAvailablePositions() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    availablePositionsInCheckList = (prefs.getInt('availablePosition') ?? 0);
+  }
+
+  void _updateAvailablePositions() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('availablePosition', availablePositionsInCheckList);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,6 +135,25 @@ class _ItemGroupState extends State<ItemGroup> {
                 },
               ),
             ),
+            actions: [
+              TextButton(
+                child: Text("Add to Check List"),
+                onPressed: () {
+                  var checklistDao =
+                      Provider.of<ItemDao>(context, listen: false);
+                  for (int i = 0; i < _list.length; i++) {
+                    checklistDao.insertItem(
+                      ItemsCompanion.insert(
+                          item: _list[i].item,
+                          priority: _list[i].priority,
+                          position: availablePositionsInCheckList),
+                    );
+                    availablePositionsInCheckList += 1;
+                    _updateAvailablePositions();
+                  }
+                },
+              ),
+            ],
           );
         });
   }

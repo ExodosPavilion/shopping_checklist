@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:moor/moor.dart';
 import 'package:provider/provider.dart';
@@ -11,7 +12,16 @@ class CheckList extends StatefulWidget {
 
 class _CheckListState extends State<CheckList> {
   //the next position available
-  int availablePosition = 0;
+  int availablePosition;
+
+  //the way the list gets sorted.
+  // 0 = by name asc,
+  // 1 = by name desc,
+  // 2 = by priority desc,
+  // 3 = by priority asc,
+  // 4 = custom
+  int sortOrder;
+
   final myController = TextEditingController(); //used by the text field later
   FocusNode myFocusNode; //also used by the text field later
 
@@ -20,6 +30,28 @@ class _CheckListState extends State<CheckList> {
     super.initState();
 
     myFocusNode = FocusNode();
+    _loadAvailablePositions();
+    _loadSortOrder();
+  }
+
+  void _loadAvailablePositions() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    availablePosition = (prefs.getInt('availablePosition') ?? 0);
+  }
+
+  void _updateAvailablePositions() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('availablePosition', availablePosition);
+  }
+
+  void _loadSortOrder() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    sortOrder = (prefs.getInt('sortOrder') ?? 0);
+  }
+
+  void _setSortOrder() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('sortOrder', sortOrder);
   }
 
   @override
@@ -33,10 +65,48 @@ class _CheckListState extends State<CheckList> {
 
   @override
   Widget build(BuildContext context) {
+    _loadAvailablePositions();
+    _loadSortOrder();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Shopping CheckList'),
-        //actions: [IconButton(icon: Icon(Icons.menu), onPressed: _navbar),], //used to get a navbar on the right (not what we need, lookup: drawer)
+        actions: [
+          PopupMenuButton(
+            onSelected: (int result) {
+              setState(
+                () {
+                  print(result);
+                  sortOrder = result;
+                  _setSortOrder();
+                },
+              );
+            },
+            icon: Icon(Icons.sort),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+              PopupMenuItem(
+                value: 0,
+                child: Text("Sort by Name (A -> Z)"),
+              ),
+              PopupMenuItem(
+                value: 1,
+                child: Text("Sort by Name (Z -> A)"),
+              ),
+              PopupMenuItem(
+                value: 2,
+                child: Text("Sort by Priority (high -> low)"),
+              ),
+              PopupMenuItem(
+                value: 3,
+                child: Text("Sort by Priority (low -> high)"),
+              ),
+              PopupMenuItem(
+                value: 4,
+                child: Text("Custom order"),
+              ),
+            ],
+          ),
+        ],
       ),
       drawer: AppDrawer("CheckList"),
       floatingActionButton: FloatingActionButton(
@@ -102,6 +172,7 @@ class _CheckListState extends State<CheckList> {
                                 position: availablePosition);
                             dao.insertItem(item);
                             availablePosition += 1;
+                            _updateAvailablePositions();
                           } else {
                             dao.updateItem(editItem.copyWith(
                                 item: Value(myController.text),
@@ -131,11 +202,34 @@ class _CheckListState extends State<CheckList> {
           return _buildRow(_list[i]);
         }); */
     final dao = Provider.of<ItemDao>(context);
+    Stream<List<Item>> streamForItems;
+
+    switch (sortOrder) {
+      case 0:
+        streamForItems = dao.watchItemsSortedByNameAsc();
+        break;
+      case 1:
+        streamForItems = dao.watchItemsSortedByNameDesc();
+        break;
+      case 2:
+        streamForItems = dao.watchItemsSortedByPriorityDesc();
+        break;
+      case 3:
+        streamForItems = dao.watchItemsSortedByPriorityAsc();
+        break;
+      case 4:
+        streamForItems = dao.watchItemsSortedByPosition();
+        break;
+      default:
+        streamForItems = dao.watchAllItems();
+    }
+
     return StreamBuilder(
-      stream: dao.watchAllItems(),
+      stream: streamForItems,
       builder: (context, AsyncSnapshot<List<Item>> snapshot) {
         final items = snapshot.data ?? [];
         availablePosition = items.length;
+        _updateAvailablePositions();
 
         return ReorderableListView(
             children: _getListItems(items, dao),

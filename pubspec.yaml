@@ -28,6 +28,7 @@ dependencies:
   path: null
   path_provider: null
   provider: ^5.0.0
+  shared_preferences: ^2.0.5
   sqlite3_flutter_libs: ^0.4.1
 
 dev_dependencies:
