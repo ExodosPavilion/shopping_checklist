@@ -22,17 +22,17 @@ class _CheckListState extends State<CheckList> {
   // 4 = custom
   int sortOrder;
 
+  //is the current app theme the dark one
+  bool isDarkTheme = true;
+
+  //what color the different priorities should be
+  // index 0 = highPriority
+  // index 1 = mediumPriority
+  // index 2 = lowPriority
+  List<Color> priorityColors;
+
   final myController = TextEditingController(); //used by the text field later
   FocusNode myFocusNode; //also used by the text field later
-
-  @override
-  void initState() {
-    super.initState();
-
-    myFocusNode = FocusNode();
-    _loadAvailablePositions();
-    _loadSortOrder();
-  }
 
   void _loadAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -54,6 +54,62 @@ class _CheckListState extends State<CheckList> {
     prefs.setInt('sortOrder', sortOrder);
   }
 
+  void _loadThemeData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    isDarkTheme = (prefs.getBool('darkTheme') ?? true);
+  }
+
+  void _loadLightPriorityColors() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    int highPriority = (prefs.getInt('highPriority') ?? Colors.red[400].value);
+    int mediumPriority =
+        (prefs.getInt('mediumPriority') ?? Colors.orange[400].value);
+    int lowPriority = (prefs.getInt('lowPriority') ?? Colors.yellow[400].value);
+
+    priorityColors = [
+      Color(highPriority),
+      Color(mediumPriority),
+      Color(lowPriority),
+    ];
+  }
+
+  void _loadDarkPriorityColors() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    int highPriority = (prefs.getInt('highPriority') ?? Colors.red.value);
+    int mediumPriority =
+        (prefs.getInt('mediumPriority') ?? Colors.orange.value);
+    int lowPriority = (prefs.getInt('lowPriority') ?? Colors.yellow.value);
+
+    priorityColors = [
+      Color(highPriority),
+      Color(mediumPriority),
+      Color(lowPriority),
+    ];
+  }
+
+  void _loadData() {
+    _loadAvailablePositions();
+    _loadSortOrder();
+    _loadThemeData();
+
+    if (isDarkTheme) {
+      _loadDarkPriorityColors();
+    } else {
+      _loadLightPriorityColors();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    myFocusNode = FocusNode();
+
+    _loadData();
+  }
+
   @override
   void dispose() {
     // Clean up the focus node and controller when the Form is disposed.
@@ -65,8 +121,7 @@ class _CheckListState extends State<CheckList> {
 
   @override
   Widget build(BuildContext context) {
-    _loadAvailablePositions();
-    _loadSortOrder();
+    _loadData();
 
     return Scaffold(
       appBar: AppBar(
@@ -164,27 +219,33 @@ class _CheckListState extends State<CheckList> {
                   child: SimpleDialogOption(
                     onPressed: () {},
                     child: TextButton(
-                        onPressed: () {
-                          if (!editing) {
-                            ItemsCompanion item = ItemsCompanion.insert(
-                                item: myController.text,
-                                priority: tempPriority,
-                                position: availablePosition);
-                            dao.insertItem(item);
-                            availablePosition += 1;
-                            _updateAvailablePositions();
-                          } else {
-                            dao.updateItem(editItem.copyWith(
-                                item: Value(myController.text),
-                                priority: Value(tempPriority)));
-                          }
-                          myController.clear();
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(
-                          'Add',
-                          style: TextStyle(fontSize: 18),
-                        )),
+                      onPressed: () {
+                        if (!editing) {
+                          ItemsCompanion item = ItemsCompanion.insert(
+                              item: myController.text,
+                              priority: tempPriority,
+                              position: availablePosition);
+                          dao.insertItem(item);
+                          availablePosition += 1;
+                          _updateAvailablePositions();
+                        } else {
+                          dao.updateItem(editItem.copyWith(
+                              item: Value(myController.text),
+                              priority: Value(tempPriority)));
+                        }
+                        myController.clear();
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(
+                        'Add',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      style: TextButton.styleFrom(
+                        primary: isDarkTheme ? Colors.black : Colors.white,
+                        backgroundColor:
+                            isDarkTheme ? Colors.grey[400] : Colors.blue,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -257,7 +318,7 @@ class _CheckListState extends State<CheckList> {
 
   Widget _buildRow(Item item, ItemDao itemDao) {
     //Builds a row for a list
-    final checked = item.checked;
+    bool checked = item.checked;
 
     return Dismissible(
       key: UniqueKey(),
@@ -272,21 +333,28 @@ class _CheckListState extends State<CheckList> {
         }
       },
       child: ListTile(
-        title: Text(item.item),
+        title: Text(
+          item.item,
+          style: TextStyle(
+            color: Colors.black,
+          ),
+        ),
         leading: Icon(
           checked
               ? Icons.check_box
               : Icons
                   .check_box_outline_blank, //if checked then use check_box else use check_box_outline_blank
+          color: checked ? Colors.grey[600] : Colors.black,
         ),
         tileColor: item.priority == 0
-            ? Colors.yellow[300]
+            ? priorityColors[2]
             : item.priority == 1
-                ? Colors.amber
-                : Colors.red,
+                ? priorityColors[1]
+                : priorityColors[0],
         onTap: () {
           //when tapped set the state of the item to either checked or not depending on the previous value
           setState(() {
+            checked = !checked;
             itemDao.updateItem(item.copyWith(checked: checked));
           });
         },

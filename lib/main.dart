@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
+import 'package:shopping_checklist/themes/darkTheme.dart';
+import 'package:shopping_checklist/themes/lightTheme.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/widgets/DrawerStateInfo.dart';
 
@@ -11,6 +14,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final db = AppDatabase();
 
+    //is the current app theme the dark one
+    bool isDarkTheme;
+
+    SharedPreferences.getInstance().then(
+      (prefs) => {
+        isDarkTheme = prefs.getBool('darkTheme') ?? true,
+      },
+    );
+
     return MultiProvider(
       providers: [
         Provider(create: (_) => db.itemDao),
@@ -20,9 +32,7 @@ class MyApp extends StatelessWidget {
             create: (_) => DrawerStateInfo())
       ],
       child: MaterialApp(
-        theme: ThemeData(
-          primaryColor: Colors.blue, //The primary color used by the app
-        ),
+        theme: isDarkTheme ? darkTheme : lightTheme,
         home: Scaffold(
           body: Center(
             child: CheckList(), //CheckList class that builds the main app page

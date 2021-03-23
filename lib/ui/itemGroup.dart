@@ -11,13 +11,17 @@ class ItemGroup extends StatefulWidget {
 }
 
 class _ItemGroupState extends State<ItemGroup> {
+  //the last posistion available in the checklist page list
   int availablePositionsInCheckList;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadAvailablePositions();
-  }
+  //is the current app theme the dark one
+  bool isDarkTheme = true;
+
+  //what color the different priorities should be
+  // index 0 = highPriority
+  // index 1 = mediumPriority
+  // index 2 = lowPriority
+  List<Color> priorityColors;
 
   void _loadAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -27,6 +31,59 @@ class _ItemGroupState extends State<ItemGroup> {
   void _updateAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt('availablePosition', availablePositionsInCheckList);
+  }
+
+  void _loadThemeData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    isDarkTheme = (prefs.getBool('darkTheme') ?? true);
+  }
+
+  void _loadLightPriorityColors() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    int highPriority = (prefs.getInt('highPriority') ?? Colors.red[400].value);
+    int mediumPriority =
+        (prefs.getInt('mediumPriority') ?? Colors.orange[400].value);
+    int lowPriority = (prefs.getInt('lowPriority') ?? Colors.yellow[400].value);
+
+    priorityColors = [
+      Color(highPriority),
+      Color(mediumPriority),
+      Color(lowPriority),
+    ];
+  }
+
+  void _loadDarkPriorityColors() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    int highPriority = (prefs.getInt('highPriority') ?? Colors.red.value);
+    int mediumPriority =
+        (prefs.getInt('mediumPriority') ?? Colors.orange.value);
+    int lowPriority = (prefs.getInt('lowPriority') ?? Colors.yellow.value);
+
+    priorityColors = [
+      Color(highPriority),
+      Color(mediumPriority),
+      Color(lowPriority),
+    ];
+  }
+
+  void _loadData() {
+    _loadAvailablePositions();
+    _loadThemeData();
+
+    if (isDarkTheme) {
+      _loadDarkPriorityColors();
+    } else {
+      _loadLightPriorityColors();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadData();
   }
 
   @override
@@ -123,12 +180,17 @@ class _ItemGroupState extends State<ItemGroup> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(7),
                       child: ListTile(
-                        title: Text(_list[index].item),
+                        title: Text(
+                          _list[index].item,
+                          style: TextStyle(
+                            color: Colors.black,
+                          ),
+                        ),
                         tileColor: _list[index].priority == 0
-                            ? Colors.yellow[300]
+                            ? priorityColors[2]
                             : _list[index].priority == 1
-                                ? Colors.amber
-                                : Colors.red,
+                                ? priorityColors[1]
+                                : priorityColors[0],
                       ),
                     ),
                   );
@@ -152,6 +214,10 @@ class _ItemGroupState extends State<ItemGroup> {
                     _updateAvailablePositions();
                   }
                 },
+                style: TextButton.styleFrom(
+                  primary: isDarkTheme ? Colors.black : Colors.white,
+                  backgroundColor: isDarkTheme ? Colors.grey[400] : Colors.blue,
+                ),
               ),
             ],
           );
