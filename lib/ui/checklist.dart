@@ -240,11 +240,6 @@ class _CheckListState extends State<CheckList> {
                         'Add',
                         style: TextStyle(fontSize: 18),
                       ),
-                      style: TextButton.styleFrom(
-                        primary: isDarkTheme ? Colors.black : Colors.white,
-                        backgroundColor:
-                            isDarkTheme ? Colors.grey[400] : Colors.blue,
-                      ),
                     ),
                   ),
                 ),
@@ -344,7 +339,7 @@ class _CheckListState extends State<CheckList> {
               ? Icons.check_box
               : Icons
                   .check_box_outline_blank, //if checked then use check_box else use check_box_outline_blank
-          color: checked ? Colors.grey[600] : Colors.black,
+          color: Colors.black,
         ),
         tileColor: item.priority == 0
             ? priorityColors[2]

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/ui/itemGroup.dart';
-import 'package:shopping_checklist/widgets/DrawerStateInfo.dart';
+import 'package:shopping_checklist/changeNotifiers/DrawerStateInfo.dart';
+import 'package:shopping_checklist/ui/settings.dart';
 
 //https://medium.com/flutter-community/flutter-vi-navigation-drawer-flutter-1-0-3a05e09b0db9
 
@@ -14,6 +15,7 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int currentDrawer = Provider.of<DrawerStateInfo>(context).getCurrentDrawer;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -54,6 +56,26 @@ class AppDrawer extends StatelessWidget {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (BuildContext context) => ItemGroup(),
+                ),
+              );
+            },
+            curDrawer: currentDrawer,
+          ),
+          _createDrawerItem(
+            icon: Icons.settings,
+            text: 'Settings',
+            position: 2,
+            //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
+            onTap: () {
+              Navigator.of(context).pop();
+              if (this.currentPage == "Settings") return;
+
+              Provider.of<DrawerStateInfo>(context, listen: false)
+                  .setCurrentDrawer(2);
+
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (BuildContext context) => Settings(),
                 ),
               );
             },
