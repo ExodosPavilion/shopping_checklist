@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
+import 'package:shopping_checklist/ui/history.dart';
 import 'package:shopping_checklist/ui/itemGroup.dart';
 import 'package:shopping_checklist/changeNotifiers/DrawerStateInfo.dart';
 import 'package:shopping_checklist/ui/settings.dart';
@@ -76,6 +77,26 @@ class AppDrawer extends StatelessWidget {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (BuildContext context) => Settings(),
+                ),
+              );
+            },
+            curDrawer: currentDrawer,
+          ),
+          _createDrawerItem(
+            icon: Icons.history,
+            text: 'History',
+            position: 3,
+            //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
+            onTap: () {
+              Navigator.of(context).pop();
+              if (this.currentPage == "History") return;
+
+              Provider.of<DrawerStateInfo>(context, listen: false)
+                  .setCurrentDrawer(3);
+
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (BuildContext context) => History(),
                 ),
               );
             },

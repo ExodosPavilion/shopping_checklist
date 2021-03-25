@@ -60,6 +60,7 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) => db.itemDao),
         Provider(create: (_) => db.presetDao),
         Provider(create: (_) => db.setItemDao),
+        Provider(create: (_) => db.historyItemDao),
         ChangeNotifierProvider<DrawerStateInfo>(
           create: (_) => DrawerStateInfo(),
         ),

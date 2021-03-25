@@ -12,6 +12,7 @@ class Items extends Table {
   IntColumn get priority => integer()();
   BoolColumn get checked => boolean().withDefault(Constant(false))();
   IntColumn get position => integer()();
+  DateTimeColumn get checkedTime => dateTime().nullable()();
 }
 
 class Presets extends Table {
@@ -27,6 +28,17 @@ class SetItems extends Table {
   IntColumn get position => integer().nullable()();
   IntColumn get presetId =>
       integer().customConstraint('REFERENCES Presets(id)')();
+}
+
+class HistoryItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get item => text().withLength(min: 1)();
+  IntColumn get priority => integer()();
+  BoolColumn get checked => boolean()();
+  IntColumn get position => integer().nullable()();
+  IntColumn get presetId =>
+      integer().nullable().customConstraint('REFERENCES Presets(id)')();
+  DateTimeColumn get checkedTime => dateTime()();
 }
 
 class ItemSet extends Table {
@@ -48,23 +60,31 @@ LazyDatabase _openConnection() {
 }
 
 @UseMoor(
-    tables: [Items, Presets, SetItems], daos: [ItemDao, PresetDao, SetItemDao])
+  tables: [Items, Presets, SetItems, HistoryItems],
+  daos: [ItemDao, PresetDao, SetItemDao, HistoryItemDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-          // Runs if the database has already been opened on the device with a lower version
-          onUpgrade: (migrator, from, to) async {
-        if (from == 1) {
-          await migrator.createAll();
-        }
-      }, beforeOpen: (details) async {
-        await customStatement('PRAGMA foreign_keys = ON');
-      });
+        // Runs if the database has already been opened on the device with a lower version
+        onUpgrade: (migrator, from, to) async {
+          if (from == 1) {
+            await migrator.addColumn(items, items.checkedTime);
+            await migrator.createAll();
+          } else if (from == 2) {
+            await migrator.addColumn(items, items.checkedTime);
+            await migrator.createTable(historyItems);
+          }
+        },
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
+      );
 }
 
 @UseDao(tables: [Items])
@@ -150,6 +170,54 @@ class PresetDao extends DatabaseAccessor<AppDatabase> with _$PresetDaoMixin {
   Future<List<Preset>> getPresetId(String presetName) {
     return (select(presets)..where((t) => t.name.equals(presetName))).get();
   }
+}
+
+@UseDao(tables: [HistoryItems])
+class HistoryItemDao extends DatabaseAccessor<AppDatabase>
+    with _$HistoryItemDaoMixin {
+  final AppDatabase db;
+
+  HistoryItemDao(this.db) : super(db);
+
+  Stream<List<HistoryItem>> watchAllHistoryItems() {
+    return (select(historyItems)).watch();
+  }
+
+  Stream<List<HistoryItem>> watchHistoryItemsbyDateAsc() {
+    return (select(historyItems)
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.checkedTime, mode: OrderingMode.asc)
+          ]))
+        .watch();
+  }
+
+  Stream<List<HistoryItem>> watchHistoryItemsbyDateDesc() {
+    return (select(historyItems)
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.checkedTime, mode: OrderingMode.desc)
+          ]))
+        .watch();
+  }
+
+  Future<List<HistoryItem>> getHistoryItemsbyDate() {
+    return (select(historyItems)
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.checkedTime, mode: OrderingMode.desc)
+          ]))
+        .get();
+  }
+
+  Future insertHistoryItem(Insertable<HistoryItem> historyItem) =>
+      into(historyItems).insert(historyItem);
+
+  Future updateHistoryItem(Insertable<HistoryItem> historyItem) =>
+      update(historyItems).replace(historyItem);
+
+  Future deleteHistoryItem(Insertable<HistoryItem> historyItem) =>
+      delete(historyItems).delete(historyItem);
 }
 
 @UseDao(tables: [SetItems, Presets])

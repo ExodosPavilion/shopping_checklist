@@ -222,9 +222,10 @@ class _CheckListState extends State<CheckList> {
                       onPressed: () {
                         if (!editing) {
                           ItemsCompanion item = ItemsCompanion.insert(
-                              item: myController.text,
-                              priority: tempPriority,
-                              position: availablePosition);
+                            item: myController.text,
+                            priority: tempPriority,
+                            position: availablePosition,
+                          );
                           dao.insertItem(item);
                           availablePosition += 1;
                           _updateAvailablePositions();
@@ -348,10 +349,14 @@ class _CheckListState extends State<CheckList> {
                 : priorityColors[0],
         onTap: () {
           //when tapped set the state of the item to either checked or not depending on the previous value
-          setState(() {
-            checked = !checked;
-            itemDao.updateItem(item.copyWith(checked: checked));
-          });
+          setState(
+            () {
+              checked = !checked;
+              itemDao.updateItem(
+                item.copyWith(checked: checked, checkedTime: DateTime.now()),
+              );
+            },
+          );
         },
       ),
     );
