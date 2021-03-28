@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
@@ -31,22 +33,19 @@ class _CheckListState extends State<CheckList> {
   // index 2 = lowPriority
   List<Color> priorityColors;
 
+  //are all the preferences loaded
+  bool isLoaded = false;
+
+  //what the time interval is between the user checking the item
+  //and the app moving it to the history screen
+  int _intervalAmount = 0;
+
   final myController = TextEditingController(); //used by the text field later
   FocusNode myFocusNode; //also used by the text field later
-
-  void _loadAvailablePositions() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    availablePosition = (prefs.getInt('availablePosition') ?? 0);
-  }
 
   void _updateAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt('availablePosition', availablePosition);
-  }
-
-  void _loadSortOrder() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    sortOrder = (prefs.getInt('sortOrder') ?? 0);
   }
 
   void _setSortOrder() async {
@@ -54,62 +53,69 @@ class _CheckListState extends State<CheckList> {
     prefs.setInt('sortOrder', sortOrder);
   }
 
-  void _loadThemeData() async {
+  void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+
     isDarkTheme = (prefs.getBool('darkTheme') ?? true);
-  }
-
-  void _loadLightPriorityColors() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    int highPriority =
-        (prefs.getInt('lightHighPriority') ?? Colors.red[400].value);
-    int mediumPriority =
-        (prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value);
-    int lowPriority =
-        (prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value);
-
-    priorityColors = [
-      Color(highPriority),
-      Color(mediumPriority),
-      Color(lowPriority),
-    ];
-  }
-
-  void _loadDarkPriorityColors() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    int highPriority = (prefs.getInt('DarkHighPriority') ?? Colors.red.value);
-    int mediumPriority =
-        (prefs.getInt('DarkMediumPriority') ?? Colors.orange.value);
-    int lowPriority = (prefs.getInt('DarkLowPriority') ?? Colors.yellow.value);
-
-    priorityColors = [
-      Color(highPriority),
-      Color(mediumPriority),
-      Color(lowPriority),
-    ];
-  }
-
-  void _loadData() {
-    _loadAvailablePositions();
-    _loadSortOrder();
-    _loadThemeData();
 
     if (isDarkTheme) {
-      _loadDarkPriorityColors();
+      priorityColors = [
+        Color(prefs.getInt('DarkHighPriority') ?? Colors.red.value),
+        Color(prefs.getInt('DarkMediumPriority') ?? Colors.orange.value),
+        Color(prefs.getInt('DarkLowPriority') ?? Colors.yellow.value),
+      ];
     } else {
-      _loadLightPriorityColors();
+      priorityColors = [
+        Color(prefs.getInt('lightHighPriority') ?? Colors.red[400].value),
+        Color(prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value),
+        Color(prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value),
+      ];
+    }
+
+    sortOrder = (prefs.getInt('sortOrder') ?? 0);
+
+    availablePosition = (prefs.getInt('availablePosition') ?? 0);
+
+    _intervalAmount = prefs.getInt('timeIntervalCheckToHistory') ?? 0;
+
+    availablePosition = (prefs.getInt('availablePosition') ?? 0);
+
+    isLoaded = true;
+
+    setState(() {});
+  }
+
+  void _cleanUp() {
+    if (isLoaded) {
+      final itemDao = Provider.of<ItemDao>(context, listen: false);
+      final historyDao = Provider.of<HistoryItemDao>(context, listen: false);
+
+      itemDao.getCheckedItemsOlderThanXHours(_intervalAmount).then(
+        (val) {
+          for (Item item in val) {
+            historyDao.insertHistoryItem(
+              HistoryItemsCompanion.insert(
+                item: item.item,
+                priority: item.priority,
+                checked: item.checked,
+                position: Value(item.position),
+                checkedTime: item.checkedTime,
+              ),
+            );
+            itemDao.deleteItem(item);
+          }
+        },
+      );
     }
   }
 
   @override
   void initState() {
+    _loadData();
+
     super.initState();
 
     myFocusNode = FocusNode();
-
-    _loadData();
   }
 
   @override
@@ -123,56 +129,66 @@ class _CheckListState extends State<CheckList> {
 
   @override
   Widget build(BuildContext context) {
-    _loadData();
+    _cleanUp();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Shopping CheckList'),
-        actions: [
-          PopupMenuButton(
-            onSelected: (int result) {
-              setState(
-                () {
-                  print(result);
-                  sortOrder = result;
-                  _setSortOrder();
-                },
-              );
-            },
-            icon: Icon(Icons.sort),
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-              PopupMenuItem(
-                value: 0,
-                child: Text("Sort by Name (A -> Z)"),
-              ),
-              PopupMenuItem(
-                value: 1,
-                child: Text("Sort by Name (Z -> A)"),
-              ),
-              PopupMenuItem(
-                value: 2,
-                child: Text("Sort by Priority (high -> low)"),
-              ),
-              PopupMenuItem(
-                value: 3,
-                child: Text("Sort by Priority (low -> high)"),
-              ),
-              PopupMenuItem(
-                value: 4,
-                child: Text("Custom order"),
-              ),
-            ],
-          ),
-        ],
-      ),
-      drawer: AppDrawer("CheckList"),
-      floatingActionButton: FloatingActionButton(
-        onPressed:
-            _newItemScreenGenerator, //Function that runs when the button is pressed
-        child: Icon(Icons.add),
-      ), //Creates the floating action button
-      body: _buildList(context),
-    );
+    return !isLoaded
+        ? CircularProgressIndicator()
+        : Scaffold(
+            appBar: AppBar(
+              title: Text('Shopping CheckList'),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline),
+                  onPressed: _addTestData,
+                ),
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline),
+                  onPressed: _deleteAll,
+                ),
+                PopupMenuButton(
+                  onSelected: (int result) {
+                    setState(
+                      () {
+                        print(result);
+                        sortOrder = result;
+                        _setSortOrder();
+                      },
+                    );
+                  },
+                  icon: Icon(Icons.sort),
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+                    PopupMenuItem(
+                      value: 0,
+                      child: Text("Sort by Name (A -> Z)"),
+                    ),
+                    PopupMenuItem(
+                      value: 1,
+                      child: Text("Sort by Name (Z -> A)"),
+                    ),
+                    PopupMenuItem(
+                      value: 2,
+                      child: Text("Sort by Priority (high -> low)"),
+                    ),
+                    PopupMenuItem(
+                      value: 3,
+                      child: Text("Sort by Priority (low -> high)"),
+                    ),
+                    PopupMenuItem(
+                      value: 4,
+                      child: Text("Custom order"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            drawer: AppDrawer("CheckList"),
+            floatingActionButton: FloatingActionButton(
+              onPressed:
+                  _newItemScreenGenerator, //Function that runs when the button is pressed
+              child: Icon(Icons.add),
+            ), //Creates the floating action button
+            body: _buildList(context),
+          );
   }
 
   void _newItemScreenGenerator(
@@ -317,6 +333,7 @@ class _CheckListState extends State<CheckList> {
   Widget _buildRow(Item item, ItemDao itemDao) {
     //Builds a row for a list
     bool checked = item.checked;
+    final historyDao = Provider.of<HistoryItemDao>(context, listen: false);
 
     return Dismissible(
       key: UniqueKey(),
@@ -333,6 +350,12 @@ class _CheckListState extends State<CheckList> {
       child: ListTile(
         title: Text(
           item.item,
+          style: TextStyle(
+            color: Colors.black,
+          ),
+        ),
+        subtitle: Text(
+          item.checkedTime.toString(),
           style: TextStyle(
             color: Colors.black,
           ),
@@ -357,6 +380,18 @@ class _CheckListState extends State<CheckList> {
               itemDao.updateItem(
                 item.copyWith(checked: checked, checkedTime: DateTime.now()),
               );
+              if (_intervalAmount == 0) {
+                historyDao.insertHistoryItem(
+                  HistoryItemsCompanion.insert(
+                    item: item.item,
+                    priority: item.priority,
+                    checked: true,
+                    position: Value(item.position),
+                    checkedTime: DateTime.now(),
+                  ),
+                );
+                itemDao.deleteItem(item);
+              }
             },
           );
         },
@@ -402,5 +437,85 @@ class _CheckListState extends State<CheckList> {
           ),
           alignment: Alignment.centerRight,
         ));
+  }
+
+  void _deleteAll() async {
+    final dao = Provider.of<ItemDao>(context, listen: false);
+    final List<Item> items = await dao.getAllItems();
+
+    for (int i = 0; i < items.length; i++) {
+      dao.deleteItem(items[i]);
+    }
+  }
+
+  void _addTestData() {
+    final List<String> words = [
+      'images',
+      'css',
+      'LC_MESSAGES',
+      'js',
+      'tmpl',
+      'lang',
+      'default',
+      'README',
+      'templates',
+      'langs',
+      'config',
+      'GNUmakefile',
+      'themes',
+      'en',
+      'img',
+      'admin',
+      'user',
+      'plugins',
+      'show',
+      'level',
+      'exec',
+      'po',
+      'icons',
+      'classes',
+      'includes',
+      '_notes',
+      'system',
+      'language',
+      'MANIFEST',
+      'modules',
+      'error_log',
+      'views',
+      'backup',
+      'db',
+      'lib',
+      'faqweb',
+      'articleweb',
+      'system32',
+      'skins',
+      '_vti_cnf',
+      'models',
+      'news',
+      'cache',
+      'CVS',
+      'main',
+      'html',
+      'faq',
+      'update',
+      'extensions',
+      'jscripts',
+    ];
+    final Random rng = new Random();
+
+    final dao = Provider.of<ItemDao>(context, listen: false);
+
+    for (int i = 0; i < words.length; i++) {
+      dao.insertItem(
+        ItemsCompanion.insert(
+          item: words[i],
+          position: i,
+          checked: Value(rng.nextBool()),
+          checkedTime: Value(DateTime.now().subtract(
+              Duration(days: rng.nextInt(1), hours: rng.nextInt(24)))),
+          priority: rng.nextInt(3),
+        ),
+      );
+    }
   }
 }

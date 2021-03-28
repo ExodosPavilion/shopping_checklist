@@ -15,6 +15,8 @@ class Settings extends StatefulWidget {
 class _SettingsState extends State<Settings> {
   bool isLoaded = false;
   bool _isDarkMode = true;
+  bool _moveCheckedImmediately = true;
+  int _intervalAmount = 0;
   List<Color> lightPriorityColors;
   List<Color> darkPriorityColors;
 
@@ -47,6 +49,14 @@ class _SettingsState extends State<Settings> {
     );
   }
 
+  void _setMoveToHistoryTimeInterval() {
+    SharedPreferences.getInstance().then(
+      (prefs) {
+        prefs.setInt('timeIntervalCheckToHistory', _intervalAmount);
+      },
+    );
+  }
+
   void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -63,6 +73,14 @@ class _SettingsState extends State<Settings> {
       Color(prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value),
       Color(prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value),
     ];
+
+    _intervalAmount = prefs.getInt('timeIntervalCheckToHistory') ?? 0;
+
+    if (_intervalAmount == 0) {
+      _moveCheckedImmediately = true;
+    } else {
+      _moveCheckedImmediately = false;
+    }
 
     isLoaded = true;
 
@@ -95,7 +113,6 @@ class _SettingsState extends State<Settings> {
 
     //TRY: allow theme color change
     //TRY: priority colors per theme
-    //TODO: time to move checked items to History
     //TODO: how long to keep oldest item in history
     //TODO LAST: about dev
 
@@ -158,7 +175,74 @@ class _SettingsState extends State<Settings> {
             _colorPickerPopup(2);
           },
         ),
+        _buildCheckedProcessor(),
       ],
+    );
+  }
+
+  _buildCheckedProcessor() {
+    List<int> timeIntervals = [for (int i = 0; i < 25; i += 1) i];
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Text('Move checked items to History'),
+            Divider(),
+            Text(
+              'Please note that once you leave this screen the items in the checklist will move to history according to the set time interval',
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+            Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Immediately'),
+                Checkbox(
+                  value: _moveCheckedImmediately,
+                  onChanged: (bool newVal) {
+                    setState(
+                      () {
+                        _moveCheckedImmediately = newVal;
+
+                        if (_moveCheckedImmediately) {
+                          _intervalAmount = 0;
+                          _setMoveToHistoryTimeInterval();
+                        }
+                      },
+                    );
+                  },
+                )
+              ],
+            ),
+            Visibility(
+              visible: !_moveCheckedImmediately,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Select the time interval'),
+                  DropdownButton(
+                    value: _intervalAmount,
+                    items: timeIntervals.map((int val) {
+                      return DropdownMenuItem(
+                        child: Text(val.toString() + ' Hours'),
+                        value: val,
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      _setMoveToHistoryTimeInterval();
+                      setState(() {
+                        _intervalAmount = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 

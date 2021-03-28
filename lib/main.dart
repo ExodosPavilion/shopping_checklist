@@ -7,7 +7,6 @@ import 'package:shopping_checklist/themes/darkTheme.dart';
 import 'package:shopping_checklist/themes/lightTheme.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/changeNotifiers/DrawerStateInfo.dart';
-import 'package:shopping_checklist/ui/settings.dart';
 
 import 'changeNotifiers/ThemeNotifier.dart';
 
@@ -40,10 +39,14 @@ bool _setDefaults() {
   SharedPreferences.getInstance().then(
     (prefs) => {
       prefs.setBool('darkTheme', (brightness == Brightness.dark)),
-      prefs.setInt('highPriority', Colors.red.value),
-      prefs.setInt('mediumPriority', Colors.orange.value),
-      prefs.setInt('lowPriority', Colors.yellow.value),
+      prefs.setInt('DarkHighPriority', Colors.red.value),
+      prefs.setInt('DarkMediumPriority', Colors.orange.value),
+      prefs.setInt('DarkLowPriority', Colors.yellow.value),
+      prefs.setInt('lightHighPriority', Colors.red[400].value),
+      prefs.setInt('lightMediumPriority', Colors.orange[400].value),
+      prefs.setInt('lightLowPriority', Colors.yellow[400].value),
       prefs.setInt('sortOrder', 2),
+      prefs.setInt('timeIntervalCheckToHistory', 0),
       prefs.setBool('defaultPreferencesSet', true)
     },
   );
@@ -70,7 +73,7 @@ class MyApp extends StatelessWidget {
         theme: Provider.of<ThemeNotifier>(context).getTheme(),
         home: Scaffold(
           body: Center(
-            child: Settings(), //CheckList class that builds the main app page
+            child: CheckList(), //CheckList class that builds the main app page
           ),
         ),
         debugShowCheckedModeBanner:

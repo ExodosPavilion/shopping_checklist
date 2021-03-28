@@ -97,6 +97,10 @@ class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
     return (select(items)).watch();
   }
 
+  Future<List<Item>> getAllItems() {
+    return (select(items)).get();
+  }
+
   Stream<List<Item>> watchItemsSortedByNameAsc() {
     return (select(items)
           ..orderBy([
@@ -135,6 +139,18 @@ class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
             (t) => OrderingTerm(expression: t.position, mode: OrderingMode.asc)
           ]))
         .watch();
+  }
+
+  Future<List<Item>> getCheckedItemsOlderThanXHours(int difference) {
+    return (select(items)
+          ..where((t) => t.checked.equals(true))
+          ..where((t) => t.checkedTime.isSmallerThanValue(
+              DateTime.now().subtract(Duration(hours: difference))))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.checkedTime, mode: OrderingMode.asc)
+          ]))
+        .get();
   }
 
   Future insertItem(Insertable<Item> item) => into(items).insert(item);
