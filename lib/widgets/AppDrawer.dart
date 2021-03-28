@@ -63,40 +63,40 @@ class AppDrawer extends StatelessWidget {
             curDrawer: currentDrawer,
           ),
           _createDrawerItem(
-            icon: Icons.settings,
-            text: 'Settings',
-            position: 2,
-            //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
-            onTap: () {
-              Navigator.of(context).pop();
-              if (this.currentPage == "Settings") return;
-
-              Provider.of<DrawerStateInfo>(context, listen: false)
-                  .setCurrentDrawer(2);
-
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (BuildContext context) => Settings(),
-                ),
-              );
-            },
-            curDrawer: currentDrawer,
-          ),
-          _createDrawerItem(
             icon: Icons.history,
             text: 'History',
-            position: 3,
+            position: 2,
             //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
             onTap: () {
               Navigator.of(context).pop();
               if (this.currentPage == "History") return;
 
               Provider.of<DrawerStateInfo>(context, listen: false)
-                  .setCurrentDrawer(3);
+                  .setCurrentDrawer(2);
 
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (BuildContext context) => History(),
+                ),
+              );
+            },
+            curDrawer: currentDrawer,
+          ),
+          _createDrawerItem(
+            icon: Icons.settings,
+            text: 'Settings',
+            position: 3,
+            //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
+            onTap: () {
+              Navigator.of(context).pop();
+              if (this.currentPage == "Settings") return;
+
+              Provider.of<DrawerStateInfo>(context, listen: false)
+                  .setCurrentDrawer(3);
+
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (BuildContext context) => Settings(),
                 ),
               );
             },

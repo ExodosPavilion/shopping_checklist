@@ -7,6 +7,7 @@ import 'package:shopping_checklist/themes/darkTheme.dart';
 import 'package:shopping_checklist/themes/lightTheme.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/changeNotifiers/DrawerStateInfo.dart';
+import 'package:shopping_checklist/ui/settings.dart';
 
 import 'changeNotifiers/ThemeNotifier.dart';
 
@@ -69,7 +70,7 @@ class MyApp extends StatelessWidget {
         theme: Provider.of<ThemeNotifier>(context).getTheme(),
         home: Scaffold(
           body: Center(
-            child: CheckList(), //CheckList class that builds the main app page
+            child: Settings(), //CheckList class that builds the main app page
           ),
         ),
         debugShowCheckedModeBanner:
