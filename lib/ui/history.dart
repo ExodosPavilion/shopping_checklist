@@ -18,83 +18,83 @@ class _HistoryState extends State<History> {
 
   List<Color> priorityColors;
 
+  int _numOfMonths = 1;
+
+  bool isLoaded = false;
+
   LinkedHashMap<String, List<HistoryItem>> _historyData =
       LinkedHashMap<String, List<HistoryItem>>();
 
-  void _loadThemeData() async {
+  void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+
     isDarkTheme = (prefs.getBool('darkTheme') ?? true);
-  }
-
-  void _loadLightPriorityColors() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    int highPriority =
-        (prefs.getInt('lightHighPriority') ?? Colors.red[400].value);
-    int mediumPriority =
-        (prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value);
-    int lowPriority =
-        (prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value);
-
-    priorityColors = [
-      Color(highPriority),
-      Color(mediumPriority),
-      Color(lowPriority),
-    ];
-  }
-
-  void _loadDarkPriorityColors() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    int highPriority = (prefs.getInt('DarkHighPriority') ?? Colors.red.value);
-    int mediumPriority =
-        (prefs.getInt('DarkMediumPriority') ?? Colors.orange.value);
-    int lowPriority = (prefs.getInt('DarkLowPriority') ?? Colors.yellow.value);
-
-    priorityColors = [
-      Color(highPriority),
-      Color(mediumPriority),
-      Color(lowPriority),
-    ];
-  }
-
-  void _loadData() {
-    _loadThemeData();
 
     if (isDarkTheme) {
-      _loadDarkPriorityColors();
+      priorityColors = [
+        Color(prefs.getInt('DarkHighPriority') ?? Colors.red.value),
+        Color(prefs.getInt('DarkMediumPriority') ?? Colors.orange.value),
+        Color(prefs.getInt('DarkLowPriority') ?? Colors.yellow.value),
+      ];
     } else {
-      _loadLightPriorityColors();
+      priorityColors = [
+        Color(prefs.getInt('lightHighPriority') ?? Colors.red[400].value),
+        Color(prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value),
+        Color(prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value),
+      ];
+    }
+
+    _numOfMonths = prefs.getInt('timeIntervalHistoryDeletion') ?? 0;
+
+    isLoaded = true;
+
+    setState(() {});
+  }
+
+  void _cleanUp() {
+    if (isLoaded) {
+      final historyDao = Provider.of<HistoryItemDao>(context, listen: false);
+
+      historyDao.getItemsOlderThanXMonths(_numOfMonths).then(
+        (val) {
+          for (HistoryItem item in val) {
+            historyDao.deleteHistoryItem(item);
+          }
+        },
+      );
     }
   }
 
   @override
   void initState() {
-    super.initState();
     _loadData();
+
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    _loadData();
+    _cleanUp();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Shopping CheckList'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add_circle_outline),
-            onPressed: _addTestData,
-          ),
-          IconButton(
-            icon: Icon(Icons.remove_circle_outline),
-            onPressed: _deleteAll,
-          ),
-        ],
-      ),
-      drawer: AppDrawer("History"), //Creates the floating action button
-      body: _getDataAndList(context),
-    );
+    return !isLoaded
+        ? CircularProgressIndicator()
+        : Scaffold(
+            appBar: AppBar(
+              title: Text('Shopping CheckList'),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline),
+                  onPressed: _addTestData,
+                ),
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline),
+                  onPressed: _deleteAll,
+                ),
+              ],
+            ),
+            drawer: AppDrawer("History"), //Creates the floating action button
+            body: _getDataAndList(context),
+          );
   }
 
   _getDataAndList(BuildContext context) {
@@ -265,8 +265,8 @@ class _HistoryState extends State<History> {
         HistoryItemsCompanion.insert(
           item: words[i],
           checked: true,
-          checkedTime: DateTime.now()
-              .add(Duration(days: rng.nextInt(100), hours: rng.nextInt(24))),
+          checkedTime:
+              DateTime.now().subtract(Duration(days: rng.nextInt(365))),
           priority: rng.nextInt(3),
         ),
       );

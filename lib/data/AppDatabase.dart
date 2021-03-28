@@ -226,6 +226,17 @@ class HistoryItemDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  Future<List<HistoryItem>> getItemsOlderThanXMonths(int difference) {
+    return (select(historyItems)
+          ..where((t) => t.checkedTime.isSmallerThanValue(
+              DateTime.now().subtract(Duration(days: difference * 30))))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.checkedTime, mode: OrderingMode.asc)
+          ]))
+        .get();
+  }
+
   Future insertHistoryItem(Insertable<HistoryItem> historyItem) =>
       into(historyItems).insert(historyItem);
 

@@ -17,6 +17,7 @@ class _SettingsState extends State<Settings> {
   bool _isDarkMode = true;
   bool _moveCheckedImmediately = true;
   int _intervalAmount = 0;
+  int _numOfMonths = 1;
   List<Color> lightPriorityColors;
   List<Color> darkPriorityColors;
 
@@ -57,6 +58,14 @@ class _SettingsState extends State<Settings> {
     );
   }
 
+  void _setDeleteFromHistoryTimeInterval() {
+    SharedPreferences.getInstance().then(
+      (prefs) {
+        prefs.setInt('timeIntervalHistoryDeletion', _numOfMonths);
+      },
+    );
+  }
+
   void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -75,6 +84,7 @@ class _SettingsState extends State<Settings> {
     ];
 
     _intervalAmount = prefs.getInt('timeIntervalCheckToHistory') ?? 0;
+    _numOfMonths = prefs.getInt('timeIntervalHistoryDeletion') ?? 1;
 
     if (_intervalAmount == 0) {
       _moveCheckedImmediately = true;
@@ -113,8 +123,6 @@ class _SettingsState extends State<Settings> {
 
     //TRY: allow theme color change
     //TRY: priority colors per theme
-    //TODO: how long to keep oldest item in history
-    //TODO LAST: about dev
 
     return ListView(
       children: [
@@ -175,12 +183,61 @@ class _SettingsState extends State<Settings> {
             _colorPickerPopup(2);
           },
         ),
-        _buildCheckedProcessor(),
+        _buildIntervalSelectorForCheckedToHistory(),
+        _buildIntervalSelectorForHistoryDeletion(),
       ],
     );
   }
 
-  _buildCheckedProcessor() {
+  _buildIntervalSelectorForHistoryDeletion() {
+    List<int> timeIntervals = [for (int i = 1; i < 13; i += 1) i];
+    print(timeIntervals);
+    print(_numOfMonths);
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Text('Delete items older than x months from History'),
+            Divider(),
+            Text(
+              'Please note that once you leave this screen the items in history will be deleted permanently according to the set time interval',
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+            Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Delete Items after'),
+                DropdownButton(
+                  value: _numOfMonths,
+                  items: timeIntervals.map(
+                    (int val) {
+                      return DropdownMenuItem(
+                        child: Text(val.toString() + ' Months'),
+                        value: val,
+                      );
+                    },
+                  ).toList(),
+                  onChanged: (value) {
+                    _setDeleteFromHistoryTimeInterval();
+                    setState(
+                      () {
+                        _numOfMonths = value;
+                      },
+                    );
+                  },
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  _buildIntervalSelectorForCheckedToHistory() {
     List<int> timeIntervals = [for (int i = 0; i < 25; i += 1) i];
 
     return Card(
