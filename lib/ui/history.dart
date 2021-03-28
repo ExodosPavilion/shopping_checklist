@@ -29,10 +29,12 @@ class _HistoryState extends State<History> {
   void _loadLightPriorityColors() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    int highPriority = (prefs.getInt('highPriority') ?? Colors.red[400].value);
+    int highPriority =
+        (prefs.getInt('lightHighPriority') ?? Colors.red[400].value);
     int mediumPriority =
-        (prefs.getInt('mediumPriority') ?? Colors.orange[400].value);
-    int lowPriority = (prefs.getInt('lowPriority') ?? Colors.yellow[400].value);
+        (prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value);
+    int lowPriority =
+        (prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value);
 
     priorityColors = [
       Color(highPriority),
@@ -44,10 +46,10 @@ class _HistoryState extends State<History> {
   void _loadDarkPriorityColors() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    int highPriority = (prefs.getInt('highPriority') ?? Colors.red.value);
+    int highPriority = (prefs.getInt('DarkHighPriority') ?? Colors.red.value);
     int mediumPriority =
-        (prefs.getInt('mediumPriority') ?? Colors.orange.value);
-    int lowPriority = (prefs.getInt('lowPriority') ?? Colors.yellow.value);
+        (prefs.getInt('DarkMediumPriority') ?? Colors.orange.value);
+    int lowPriority = (prefs.getInt('DarkLowPriority') ?? Colors.yellow.value);
 
     priorityColors = [
       Color(highPriority),
