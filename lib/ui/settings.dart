@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_checklist/changeNotifiers/ThemeNotifier.dart';
+import 'package:shopping_checklist/constants.dart';
 import 'package:shopping_checklist/themes/darkTheme.dart';
 import 'package:shopping_checklist/themes/lightTheme.dart';
 import 'package:shopping_checklist/widgets/AppDrawer.dart';
@@ -16,8 +17,14 @@ class _SettingsState extends State<Settings> {
   bool isLoaded = false;
   bool _isDarkMode = true;
   bool _moveCheckedImmediately = true;
+  bool _useCardStyle = false;
+
   int _intervalAmount = 0;
+  List<int> hourIntervals = [for (int i = 0; i < 25; i += 1) i];
+
   int _numOfMonths = 1;
+  List<int> monthIntervals = [for (int i = 1; i < 13; i += 1) i];
+
   List<Color> lightPriorityColors;
   List<Color> darkPriorityColors;
 
@@ -26,16 +33,16 @@ class _SettingsState extends State<Settings> {
         ? themeNotifier.setTheme(darkTheme)
         : themeNotifier.setTheme(lightTheme);
     SharedPreferences.getInstance().then(
-      (prefs) => prefs.setBool('darkTheme', value),
+      (prefs) => prefs.setBool(kIsDarkTheme, value),
     );
   }
 
   void _setLightPriorityColors() {
     SharedPreferences.getInstance().then(
       (prefs) {
-        prefs.setInt('lightHighPriority', lightPriorityColors[0].value);
-        prefs.setInt('lightMediumPriority', lightPriorityColors[1].value);
-        prefs.setInt('lightLowPriority', lightPriorityColors[2].value);
+        prefs.setInt(kLightHighPriority, lightPriorityColors[0].value);
+        prefs.setInt(kLightMediumPriority, lightPriorityColors[1].value);
+        prefs.setInt(kLightLowPriority, lightPriorityColors[2].value);
       },
     );
   }
@@ -43,9 +50,17 @@ class _SettingsState extends State<Settings> {
   void _setDarkPriorityColors() {
     SharedPreferences.getInstance().then(
       (prefs) {
-        prefs.setInt('DarkHighPriority', darkPriorityColors[0].value);
-        prefs.setInt('DarkMediumPriority', darkPriorityColors[1].value);
-        prefs.setInt('DarkLowPriority', darkPriorityColors[2].value);
+        prefs.setInt(kDarkHighPriority, darkPriorityColors[0].value);
+        prefs.setInt(kDarkMediumPriority, darkPriorityColors[1].value);
+        prefs.setInt(kDarkLowPriority, darkPriorityColors[2].value);
+      },
+    );
+  }
+
+  void _setListStyle() {
+    SharedPreferences.getInstance().then(
+      (prefs) {
+        prefs.setBool(kUseCardStyle, _useCardStyle);
       },
     );
   }
@@ -53,7 +68,7 @@ class _SettingsState extends State<Settings> {
   void _setMoveToHistoryTimeInterval() {
     SharedPreferences.getInstance().then(
       (prefs) {
-        prefs.setInt('timeIntervalCheckToHistory', _intervalAmount);
+        prefs.setInt(kTimeIntervalCheckToHistory, _intervalAmount);
       },
     );
   }
@@ -61,7 +76,7 @@ class _SettingsState extends State<Settings> {
   void _setDeleteFromHistoryTimeInterval() {
     SharedPreferences.getInstance().then(
       (prefs) {
-        prefs.setInt('timeIntervalHistoryDeletion', _numOfMonths);
+        prefs.setInt(kTimeIntervalHistoryDeletion, _numOfMonths);
       },
     );
   }
@@ -69,22 +84,29 @@ class _SettingsState extends State<Settings> {
   void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    _isDarkMode = (prefs.getBool('darkTheme') ?? true);
+    _isDarkMode = (prefs.getBool(kIsDarkTheme) ?? true);
 
     darkPriorityColors = [
-      Color(prefs.getInt('DarkHighPriority') ?? Colors.red.value),
-      Color(prefs.getInt('DarkMediumPriority') ?? Colors.orange.value),
-      Color(prefs.getInt('DarkLowPriority') ?? Colors.yellow.value),
+      Color(prefs.getInt(kDarkHighPriority) ?? kDefaultDarkHighPriority.value),
+      Color(prefs.getInt(kDarkMediumPriority) ??
+          kDefaultDarkMediumPriority.value),
+      Color(prefs.getInt(kDarkLowPriority) ?? kDefaultDarkLowPriority.value),
     ];
 
     lightPriorityColors = [
-      Color(prefs.getInt('lightHighPriority') ?? Colors.red[400].value),
-      Color(prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value),
-      Color(prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value),
+      Color(
+          prefs.getInt(kLightHighPriority) ?? kDefaultlightHighPriority.value),
+      Color(prefs.getInt(kLightMediumPriority) ??
+          kDefaultlightMediumPriority.value),
+      Color(prefs.getInt(kLightLowPriority) ?? kDefaultlightLowPriority.value),
     ];
 
-    _intervalAmount = prefs.getInt('timeIntervalCheckToHistory') ?? 0;
-    _numOfMonths = prefs.getInt('timeIntervalHistoryDeletion') ?? 1;
+    _useCardStyle = (prefs.getBool(kUseCardStyle) ?? false);
+
+    _intervalAmount = prefs.getInt(kTimeIntervalCheckToHistory) ??
+        kDefCheckToHistoryTimeInterval;
+    _numOfMonths = prefs.getInt(kTimeIntervalHistoryDeletion) ??
+        kDefHistoryClearTimeIntercal;
 
     if (_intervalAmount == 0) {
       _moveCheckedImmediately = true;
@@ -109,16 +131,17 @@ class _SettingsState extends State<Settings> {
         ? CircularProgressIndicator()
         : Scaffold(
             appBar: AppBar(
-              title: Text('Shopping CheckList'),
+              title: Text(kSettingsScreen),
               //actions: [IconButton(icon: Icon(Icons.menu), onPressed: _navbar),], //used to get a navbar on the right (not what we need, lookup: drawer)
             ),
-            drawer: AppDrawer("Settings"), //Creates the floating action button
+            drawer:
+                AppDrawer(kSettingsScreen), //Creates the floating action button
             body: _buildList(context),
           );
   }
 
   Widget _buildList(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
     _isDarkMode = (themeNotifier.getTheme() == darkTheme);
 
     //TRY: allow theme color change
@@ -126,180 +149,239 @@ class _SettingsState extends State<Settings> {
 
     return ListView(
       children: [
-        SwitchListTile(
-          title: Text('Dark Mode'),
-          value: _isDarkMode,
-          onChanged: (bool value) {
-            setState(
-              () {
-                _isDarkMode = value;
-              },
-            );
-            onThemeChanged(value, themeNotifier);
-          },
+        _buildCard(
+          kDarkModeSwitchTitle,
+          hasToggleWidget: true,
+          isSwitch: true,
+          toggleValue: _isDarkMode,
+          toggleText: kDarkModeSwtichText,
+          toggledFunction: _darkModeSwitchFunc,
         ),
-        ListTile(
-          title: Text(
-            'High Priority',
-            style: TextStyle(color: Colors.black),
-          ),
-          trailing: Icon(
-            Icons.palette,
-            color: Colors.black,
-          ),
-          tileColor:
-              _isDarkMode ? darkPriorityColors[0] : lightPriorityColors[0],
-          onTap: () {
-            _colorPickerPopup(0);
-          },
+        _buildCard(
+          kUseCardStyleSwitchTitle,
+          hasToggleWidget: true,
+          isSwitch: true,
+          toggleValue: _useCardStyle,
+          toggleText: kUseCardStyleSwitchText,
+          toggledFunction: _cardStyleSwitchFunc,
         ),
-        ListTile(
-          title: Text(
-            'Medium Priority',
-            style: TextStyle(color: Colors.black),
-          ),
-          trailing: Icon(
-            Icons.palette,
-            color: Colors.black,
-          ),
-          tileColor:
-              _isDarkMode ? darkPriorityColors[1] : lightPriorityColors[1],
-          onTap: () {
-            _colorPickerPopup(1);
-          },
+        _buildCard(
+          kPriorityColorChangerTitle,
+          hasOwnWidgets: true,
+          listOfWidgetsToUse: [
+            _buildListTile(kPriorityColorChangerHigh, 0),
+            _buildListTile(kPriorityColorChangerMedium, 1),
+            _buildListTile(kPriorityColorChangerLow, 2),
+          ],
         ),
-        ListTile(
-          title: Text(
-            'Low Priority',
-            style: TextStyle(color: Colors.black),
-          ),
-          trailing: Icon(
-            Icons.palette,
-            color: Colors.black,
-          ),
-          tileColor:
-              _isDarkMode ? darkPriorityColors[2] : lightPriorityColors[2],
-          onTap: () {
-            _colorPickerPopup(2);
-          },
+        _buildCard(
+          kChecklistToHistoryCardTitle,
+          isSwitch: false,
+          toggleValue: _moveCheckedImmediately,
+          toggledFunction: _checkedToHistoryCheckBoxFunc,
+          warning: kChecklistToHistoryCardWarning,
+          toggleText: kChecklistToHistoryCardCheckTitle,
+          intervalTitle: kChecklistToHistoryCardDropDownTitle,
+          intervals: hourIntervals,
+          intervalValue: _intervalAmount,
+          intervalItemtext: kChecklistToHistoryCardDropDownItemText,
+          intervalChangedFunction: _checkedToHistoryDropDownFunc,
         ),
-        _buildIntervalSelectorForCheckedToHistory(),
-        _buildIntervalSelectorForHistoryDeletion(),
+        _buildCard(
+          kHistoryDeleteCardTitle,
+          hasToggleWidget: false,
+          warning: kHistoryDeleteCardWarning,
+          intervalTitle: kHistoryDeleteCardDropDownTitle,
+          intervals: monthIntervals,
+          intervalValue: _numOfMonths,
+          intervalItemtext: kHistoryDeleteCardDropDownITem,
+          intervalChangedFunction: _historyDeleteDropDownFunc,
+        ),
       ],
     );
   }
 
-  _buildIntervalSelectorForHistoryDeletion() {
-    List<int> timeIntervals = [for (int i = 1; i < 13; i += 1) i];
-    print(timeIntervals);
-    print(_numOfMonths);
+  _buildListTile(String tileTitle, int index) {
+    return Card(
+      child: ListTile(
+        title: Text(
+          tileTitle,
+          style: TextStyle(color: Colors.black),
+        ),
+        trailing: Icon(
+          Icons.palette,
+          color: Colors.black,
+        ),
+        tileColor: _isDarkMode
+            ? darkPriorityColors[index]
+            : lightPriorityColors[index],
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))),
+        onTap: () {
+          _colorPickerPopup(index);
+        },
+      ),
+    );
+  }
+
+  _buildCard(
+    String title, {
+    bool hasToggleWidget = true,
+    bool hasOwnWidgets = false,
+    List<Widget> listOfWidgetsToUse,
+    bool isSwitch = false,
+    bool toggleValue = false,
+    Function toggledFunction,
+    String warning = '',
+    String toggleText = '',
+    String intervalTitle = '',
+    List<int> intervals,
+    int intervalValue,
+    String intervalItemtext = '',
+    Function intervalChangedFunction,
+  }) {
+    List<Widget> _widgetsForCard = [
+      Text(
+        title,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      Divider(),
+    ];
+
+    if (hasOwnWidgets) {
+      if (listOfWidgetsToUse != null || listOfWidgetsToUse != []) {
+        for (Widget widget in listOfWidgetsToUse) {
+          _widgetsForCard.add(widget);
+        }
+      }
+    } else {
+      if (warning != '') {
+        _widgetsForCard.add(
+          Text(
+            warning,
+            style: TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        );
+        _widgetsForCard.add(
+          Divider(),
+        );
+      }
+
+      if (hasToggleWidget) {
+        if (isSwitch) {
+          _widgetsForCard.add(
+            SwitchListTile(
+              title: Text(toggleText),
+              value: toggleValue,
+              onChanged: (value) => toggledFunction(value),
+            ),
+          );
+        } else {
+          _widgetsForCard.add(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  toggleText,
+                  style: TextStyle(fontSize: 16),
+                ),
+                Checkbox(
+                  value: toggleValue,
+                  onChanged: (value) => toggledFunction(value),
+                )
+              ],
+            ),
+          );
+        }
+      }
+
+      if (intervalTitle != '') {
+        _widgetsForCard.add(
+          Visibility(
+            visible: !toggleValue,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  intervalTitle,
+                  style: TextStyle(fontSize: 16),
+                ),
+                DropdownButton(
+                  value: intervalValue,
+                  items: intervals.map((int val) {
+                    return DropdownMenuItem(
+                      child: Text(val.toString() + intervalItemtext),
+                      value: val,
+                    );
+                  }).toList(),
+                  onChanged: (value) => intervalChangedFunction(value),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
 
     return Card(
       child: Padding(
         padding: EdgeInsets.all(10),
         child: Column(
-          children: [
-            Text('Delete items older than x months from History'),
-            Divider(),
-            Text(
-              'Please note that once you leave this screen the items in history will be deleted permanently according to the set time interval',
-              style: TextStyle(color: Colors.red, fontSize: 12),
-            ),
-            Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Delete Items after'),
-                DropdownButton(
-                  value: _numOfMonths,
-                  items: timeIntervals.map(
-                    (int val) {
-                      return DropdownMenuItem(
-                        child: Text(val.toString() + ' Months'),
-                        value: val,
-                      );
-                    },
-                  ).toList(),
-                  onChanged: (value) {
-                    _setDeleteFromHistoryTimeInterval();
-                    setState(
-                      () {
-                        _numOfMonths = value;
-                      },
-                    );
-                  },
-                ),
-              ],
-            )
-          ],
+          children: _widgetsForCard,
         ),
       ),
     );
   }
 
-  _buildIntervalSelectorForCheckedToHistory() {
-    List<int> timeIntervals = [for (int i = 0; i < 25; i += 1) i];
+  _darkModeSwitchFunc(bool newVal) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
+    setState(
+      () {
+        _isDarkMode = newVal;
+      },
+    );
+    onThemeChanged(newVal, themeNotifier);
+  }
 
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(10),
-        child: Column(
-          children: [
-            Text('Move checked items to History'),
-            Divider(),
-            Text(
-              'Please note that once you leave this screen the items in the checklist will move to history according to the set time interval',
-              style: TextStyle(color: Colors.red, fontSize: 12),
-            ),
-            Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Immediately'),
-                Checkbox(
-                  value: _moveCheckedImmediately,
-                  onChanged: (bool newVal) {
-                    setState(
-                      () {
-                        _moveCheckedImmediately = newVal;
+  _cardStyleSwitchFunc(bool newVal) {
+    setState(
+      () {
+        _useCardStyle = newVal;
+      },
+    );
+    _setListStyle();
+  }
 
-                        if (_moveCheckedImmediately) {
-                          _intervalAmount = 0;
-                          _setMoveToHistoryTimeInterval();
-                        }
-                      },
-                    );
-                  },
-                )
-              ],
-            ),
-            Visibility(
-              visible: !_moveCheckedImmediately,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Select the time interval'),
-                  DropdownButton(
-                    value: _intervalAmount,
-                    items: timeIntervals.map((int val) {
-                      return DropdownMenuItem(
-                        child: Text(val.toString() + ' Hours'),
-                        value: val,
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      _setMoveToHistoryTimeInterval();
-                      setState(() {
-                        _intervalAmount = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            )
-          ],
-        ),
-      ),
+  _checkedToHistoryCheckBoxFunc(bool newVal) {
+    setState(
+      () {
+        _moveCheckedImmediately = newVal;
+
+        if (_moveCheckedImmediately) {
+          _intervalAmount = 0;
+          _setMoveToHistoryTimeInterval();
+        }
+      },
+    );
+  }
+
+  _checkedToHistoryDropDownFunc(int newVal) {
+    _setMoveToHistoryTimeInterval();
+    setState(() {
+      _intervalAmount = newVal;
+    });
+  }
+
+  _historyDeleteDropDownFunc(int newVal) {
+    _setDeleteFromHistoryTimeInterval();
+    setState(
+      () {
+        _numOfMonths = newVal;
+      },
     );
   }
 
@@ -330,7 +412,7 @@ class _SettingsState extends State<Settings> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text('Pick a Color'),
+          title: Text(kColorPickerDialogTitle),
           children: [
             Container(
               width: MediaQuery.of(context).size.width * .8, //80% of the screen
@@ -344,11 +426,15 @@ class _SettingsState extends State<Settings> {
                         child: IconButton(
                           icon: Icon(
                             Icons.circle,
-                            color: _isDarkMode ? val : val[400],
+                            color: _isDarkMode
+                                ? val[kDarkPriorityColorShade]
+                                : val[kLightPriorityColorShade],
                           ),
                           onPressed: () {
-                            darkPriorityColors[index] = val;
-                            lightPriorityColors[index] = val[400];
+                            darkPriorityColors[index] =
+                                val[kDarkPriorityColorShade];
+                            lightPriorityColors[index] =
+                                val[kLightPriorityColorShade];
                             _setDarkPriorityColors();
                             _setLightPriorityColors();
                             setState(() {});

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shopping_checklist/constants.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:shopping_checklist/widgets/AppDrawer.dart';
 
@@ -28,23 +29,29 @@ class _HistoryState extends State<History> {
   void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    isDarkTheme = (prefs.getBool('darkTheme') ?? true);
+    isDarkTheme = (prefs.getBool(kIsDarkTheme) ?? true);
 
     if (isDarkTheme) {
       priorityColors = [
-        Color(prefs.getInt('DarkHighPriority') ?? Colors.red.value),
-        Color(prefs.getInt('DarkMediumPriority') ?? Colors.orange.value),
-        Color(prefs.getInt('DarkLowPriority') ?? Colors.yellow.value),
+        Color(
+            prefs.getInt(kDarkHighPriority) ?? kDefaultDarkHighPriority.value),
+        Color(prefs.getInt(kDarkMediumPriority) ??
+            kDefaultDarkMediumPriority.value),
+        Color(prefs.getInt(kDarkLowPriority) ?? kDefaultDarkLowPriority.value),
       ];
     } else {
       priorityColors = [
-        Color(prefs.getInt('lightHighPriority') ?? Colors.red[400].value),
-        Color(prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value),
-        Color(prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value),
+        Color(prefs.getInt(kLightHighPriority) ??
+            kDefaultlightHighPriority.value),
+        Color(prefs.getInt(kLightMediumPriority) ??
+            kDefaultlightMediumPriority.value),
+        Color(
+            prefs.getInt(kLightLowPriority) ?? kDefaultlightLowPriority.value),
       ];
     }
 
-    _numOfMonths = prefs.getInt('timeIntervalHistoryDeletion') ?? 0;
+    _numOfMonths = prefs.getInt(kTimeIntervalHistoryDeletion) ??
+        kDefHistoryClearTimeIntercal;
 
     isLoaded = true;
 
@@ -80,8 +87,8 @@ class _HistoryState extends State<History> {
         ? CircularProgressIndicator()
         : Scaffold(
             appBar: AppBar(
-              title: Text('Shopping CheckList'),
-              actions: [
+              title: Text(kHistoryScreen),
+              /* actions: [
                 IconButton(
                   icon: Icon(Icons.add_circle_outline),
                   onPressed: _addTestData,
@@ -90,9 +97,10 @@ class _HistoryState extends State<History> {
                   icon: Icon(Icons.remove_circle_outline),
                   onPressed: _deleteAll,
                 ),
-              ],
+              ], */
             ),
-            drawer: AppDrawer("History"), //Creates the floating action button
+            drawer:
+                AppDrawer(kHistoryScreen), //Creates the floating action button
             body: _getDataAndList(context),
           );
   }
@@ -192,7 +200,7 @@ class _HistoryState extends State<History> {
         dateData.year.toString();
   }
 
-  void _deleteAll() async {
+  /* void _deleteAll() async {
     final dao = AppDatabase().historyItemDao;
     final List<HistoryItem> historyItems = await dao.getHistoryItemsbyDate();
 
@@ -271,5 +279,5 @@ class _HistoryState extends State<History> {
         ),
       );
     }
-  }
+  } */
 }

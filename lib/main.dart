@@ -9,6 +9,7 @@ import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/changeNotifiers/DrawerStateInfo.dart';
 
 import 'changeNotifiers/ThemeNotifier.dart';
+import 'constants.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +17,13 @@ void main() {
   var defaultPreferencesSet = false;
 
   SharedPreferences.getInstance().then((prefs) {
-    defaultPreferencesSet = prefs.getBool('defaultPreferencesSet') ?? false;
+    defaultPreferencesSet = prefs.getBool(kDefaultPreferencesSet) ?? false;
 
     if (!defaultPreferencesSet) {
       defaultPreferencesSet = _setDefaults();
     }
 
-    var isDarkTheme = prefs.getBool('darkTheme') ?? true;
+    var isDarkTheme = prefs.getBool(kIsDarkTheme) ?? true;
 
     runApp(
       ChangeNotifierProvider<ThemeNotifier>(
@@ -38,16 +39,19 @@ bool _setDefaults() {
 
   SharedPreferences.getInstance().then(
     (prefs) => {
-      prefs.setBool('darkTheme', (brightness == Brightness.dark)),
-      prefs.setInt('DarkHighPriority', Colors.red.value),
-      prefs.setInt('DarkMediumPriority', Colors.orange.value),
-      prefs.setInt('DarkLowPriority', Colors.yellow.value),
-      prefs.setInt('lightHighPriority', Colors.red[400].value),
-      prefs.setInt('lightMediumPriority', Colors.orange[400].value),
-      prefs.setInt('lightLowPriority', Colors.yellow[400].value),
-      prefs.setInt('sortOrder', 2),
-      prefs.setInt('timeIntervalCheckToHistory', 0),
-      prefs.setBool('defaultPreferencesSet', true)
+      prefs.setBool(kIsDarkTheme, (brightness == Brightness.dark)),
+      //
+      prefs.setInt(kDarkHighPriority, kDefaultDarkHighPriority.value),
+      prefs.setInt(kDarkMediumPriority, kDefaultDarkMediumPriority.value),
+      prefs.setInt(kDarkLowPriority, kDefaultDarkLowPriority.value),
+      //
+      prefs.setInt(kLightHighPriority, kDefaultlightHighPriority.value),
+      prefs.setInt(kLightMediumPriority, kDefaultlightMediumPriority.value),
+      prefs.setInt(kLightLowPriority, kDefaultlightLowPriority.value),
+      //
+      prefs.setInt(kSortOrder, kDefSortOrder),
+      prefs.setInt(kTimeIntervalCheckToHistory, kDefCheckToHistoryTimeInterval),
+      prefs.setBool(kDefaultPreferencesSet, true)
     },
   );
 

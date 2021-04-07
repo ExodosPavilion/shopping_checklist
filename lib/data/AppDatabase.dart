@@ -67,20 +67,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         // Runs if the database has already been opened on the device with a lower version
-        onUpgrade: (migrator, from, to) async {
-          if (from == 1) {
-            await migrator.addColumn(items, items.checkedTime);
-            await migrator.createAll();
-          } else if (from == 2) {
-            await migrator.addColumn(items, items.checkedTime);
-            await migrator.createTable(historyItems);
-          }
-        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
@@ -172,6 +163,14 @@ class PresetDao extends DatabaseAccessor<AppDatabase> with _$PresetDaoMixin {
             (t) => OrderingTerm(expression: t.name, mode: OrderingMode.asc)
           ]))
         .watch();
+  }
+
+  Future<List<Preset>> getAllItems() {
+    return (select(presets)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.name, mode: OrderingMode.asc)
+          ]))
+        .get();
   }
 
   Future insertPreset(Insertable<Preset> preset) =>

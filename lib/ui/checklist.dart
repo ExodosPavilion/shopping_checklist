@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shopping_checklist/constants.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:moor/moor.dart';
 import 'package:provider/provider.dart';
@@ -40,45 +41,54 @@ class _CheckListState extends State<CheckList> {
   //and the app moving it to the history screen
   int _intervalAmount = 0;
 
+  bool cardStyle = false;
+
   final myController = TextEditingController(); //used by the text field later
   FocusNode myFocusNode; //also used by the text field later
 
   void _updateAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt('availablePosition', availablePosition);
+    prefs.setInt(kAvailablePosition, availablePosition);
   }
 
   void _setSortOrder() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt('sortOrder', sortOrder);
+    prefs.setInt(kSortOrder, sortOrder);
   }
 
   void _loadData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    isDarkTheme = (prefs.getBool('darkTheme') ?? true);
+    isDarkTheme = (prefs.getBool(kIsDarkTheme) ?? true);
 
     if (isDarkTheme) {
       priorityColors = [
-        Color(prefs.getInt('DarkHighPriority') ?? Colors.red.value),
-        Color(prefs.getInt('DarkMediumPriority') ?? Colors.orange.value),
-        Color(prefs.getInt('DarkLowPriority') ?? Colors.yellow.value),
+        Color(
+            prefs.getInt(kDarkHighPriority) ?? kDefaultDarkHighPriority.value),
+        Color(prefs.getInt(kDarkMediumPriority) ??
+            kDefaultDarkMediumPriority.value),
+        Color(prefs.getInt(kDarkLowPriority) ?? kDefaultDarkLowPriority.value),
       ];
     } else {
       priorityColors = [
-        Color(prefs.getInt('lightHighPriority') ?? Colors.red[400].value),
-        Color(prefs.getInt('lightMediumPriority') ?? Colors.orange[400].value),
-        Color(prefs.getInt('lightLowPriority') ?? Colors.yellow[400].value),
+        Color(prefs.getInt(kLightHighPriority) ??
+            kDefaultlightHighPriority.value),
+        Color(prefs.getInt(kLightMediumPriority) ??
+            kDefaultlightMediumPriority.value),
+        Color(
+            prefs.getInt(kLightLowPriority) ?? kDefaultlightLowPriority.value),
       ];
     }
 
-    sortOrder = (prefs.getInt('sortOrder') ?? 0);
+    sortOrder = (prefs.getInt(kSortOrder) ?? kDefSortOrder);
 
-    availablePosition = (prefs.getInt('availablePosition') ?? 0);
+    availablePosition =
+        (prefs.getInt(kAvailablePosition) ?? kDefAvailablePositions);
 
-    _intervalAmount = prefs.getInt('timeIntervalCheckToHistory') ?? 0;
+    cardStyle = (prefs.getBool(kUseCardStyle) ?? false);
 
-    availablePosition = (prefs.getInt('availablePosition') ?? 0);
+    _intervalAmount = prefs.getInt(kTimeIntervalCheckToHistory) ??
+        kDefCheckToHistoryTimeInterval;
 
     isLoaded = true;
 
@@ -135,16 +145,16 @@ class _CheckListState extends State<CheckList> {
         ? CircularProgressIndicator()
         : Scaffold(
             appBar: AppBar(
-              title: Text('Shopping CheckList'),
+              title: Text(kChecklistScreen),
               actions: [
-                IconButton(
+                /*IconButton(
                   icon: Icon(Icons.add_circle_outline),
                   onPressed: _addTestData,
                 ),
                 IconButton(
                   icon: Icon(Icons.remove_circle_outline),
                   onPressed: _deleteAll,
-                ),
+                ),*/
                 PopupMenuButton(
                   onSelected: (int result) {
                     setState(
@@ -159,29 +169,29 @@ class _CheckListState extends State<CheckList> {
                   itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
                     PopupMenuItem(
                       value: 0,
-                      child: Text("Sort by Name (A -> Z)"),
+                      child: Text(kSortOrder0),
                     ),
                     PopupMenuItem(
                       value: 1,
-                      child: Text("Sort by Name (Z -> A)"),
+                      child: Text(kSortOrder1),
                     ),
                     PopupMenuItem(
                       value: 2,
-                      child: Text("Sort by Priority (high -> low)"),
+                      child: Text(kSortOrder2),
                     ),
                     PopupMenuItem(
                       value: 3,
-                      child: Text("Sort by Priority (low -> high)"),
+                      child: Text(kSortOrder3),
                     ),
                     PopupMenuItem(
                       value: 4,
-                      child: Text("Custom order"),
+                      child: Text(kSortOrder4),
                     ),
                   ],
                 ),
               ],
             ),
-            drawer: AppDrawer("CheckList"),
+            drawer: AppDrawer(kChecklistScreen),
             floatingActionButton: FloatingActionButton(
               onPressed:
                   _newItemScreenGenerator, //Function that runs when the button is pressed
@@ -208,7 +218,7 @@ class _CheckListState extends State<CheckList> {
         builder: (context) {
           return StatefulBuilder(builder: (context, setState) {
             return SimpleDialog(
-              title: const Text('Enter item info:'),
+              title: const Text(kNewItemDialogTitle),
               children: <Widget>[
                 SimpleDialogOption(
                   onPressed: () {},
@@ -221,9 +231,11 @@ class _CheckListState extends State<CheckList> {
                   child: DropdownButton(
                     value: tempPriority,
                     items: <DropdownMenuItem>[
-                      DropdownMenuItem(child: Text("High"), value: 2),
-                      DropdownMenuItem(child: Text("Medium"), value: 1),
-                      DropdownMenuItem(child: Text("Low"), value: 0),
+                      DropdownMenuItem(
+                          child: Text(kDropDownMenuHigh), value: 2),
+                      DropdownMenuItem(
+                          child: Text(kDropDownMenuMedium), value: 1),
+                      DropdownMenuItem(child: Text(kDropDownMenuLow), value: 0),
                     ],
                     onChanged: (priority) {
                       setState(() {
@@ -269,13 +281,6 @@ class _CheckListState extends State<CheckList> {
   }
 
   StreamBuilder<List<Item>> _buildList(BuildContext context) {
-    //builds a list of items using the rows provided by _buildRow
-/*     return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _list.length,
-        itemBuilder: (BuildContext _context, int i) {
-          return _buildRow(_list[i]);
-        }); */
     final dao = Provider.of<ItemDao>(context);
     Stream<List<Item>> streamForItems;
 
@@ -332,7 +337,6 @@ class _CheckListState extends State<CheckList> {
 
   Widget _buildRow(Item item, ItemDao itemDao) {
     //Builds a row for a list
-    bool checked = item.checked;
     final historyDao = Provider.of<HistoryItemDao>(context, listen: false);
 
     return Dismissible(
@@ -347,20 +351,64 @@ class _CheckListState extends State<CheckList> {
               editItem: item.toCompanion(false), editing: true);
         }
       },
+      child: cardStyle
+          ? _cardStyle(item, itemDao, historyDao)
+          : _continuousListStyle(item, itemDao, historyDao),
+    );
+  }
+
+  _itemToggleFunc(
+    Item item,
+    bool checked,
+    ItemDao itemDao,
+    HistoryItemDao historyDao,
+  ) {
+    setState(
+      () {
+        checked = !checked;
+
+        if (checked) {
+          if (_intervalAmount == 0) {
+            historyDao.insertHistoryItem(
+              HistoryItemsCompanion.insert(
+                item: item.item,
+                priority: item.priority,
+                checked: true,
+                position: Value(item.position),
+                checkedTime: DateTime.now(),
+              ),
+            );
+            itemDao.deleteItem(item);
+          } else {
+            itemDao.updateItem(
+              item.copyWith(checked: checked, checkedTime: DateTime.now()),
+            );
+          }
+        } else {
+          itemDao.deleteItem(item);
+          itemDao.insertItem(
+            ItemsCompanion.insert(
+                id: Value(item.id),
+                item: item.item,
+                priority: item.priority,
+                checked: Value(checked),
+                position: item.position),
+          );
+        }
+      },
+    );
+  }
+
+  _cardStyle(Item item, ItemDao itemDao, HistoryItemDao historyDao) {
+    bool checked = item.checked;
+
+    return Card(
       child: ListTile(
         title: Text(
           item.item,
-          style: TextStyle(
-            color: Colors.black,
-          ),
+          style: TextStyle(color: Colors.black),
         ),
-        subtitle: Text(
-          item.checkedTime.toString(),
-          style: TextStyle(
-            color: Colors.black,
-          ),
-        ),
-        leading: Icon(
+        trailing: Icon(
           checked
               ? Icons.check_box
               : Icons
@@ -372,29 +420,50 @@ class _CheckListState extends State<CheckList> {
             : item.priority == 1
                 ? priorityColors[1]
                 : priorityColors[0],
-        onTap: () {
-          //when tapped set the state of the item to either checked or not depending on the previous value
-          setState(
-            () {
-              checked = !checked;
-              itemDao.updateItem(
-                item.copyWith(checked: checked, checkedTime: DateTime.now()),
-              );
-              if (_intervalAmount == 0) {
-                historyDao.insertHistoryItem(
-                  HistoryItemsCompanion.insert(
-                    item: item.item,
-                    priority: item.priority,
-                    checked: true,
-                    position: Value(item.position),
-                    checkedTime: DateTime.now(),
-                  ),
-                );
-                itemDao.deleteItem(item);
-              }
-            },
-          );
-        },
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))),
+        onTap: () => _itemToggleFunc(item, checked, itemDao, historyDao),
+      ),
+    );
+  }
+
+  _continuousListStyle(Item item, ItemDao itemDao, HistoryItemDao historyDao) {
+    bool checked = item.checked;
+
+    return Container(
+      padding: EdgeInsets.all(20),
+      color: item.priority == 0
+          ? priorityColors[2]
+          : item.priority == 1
+              ? priorityColors[1]
+              : priorityColors[0],
+      child: InkWell(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              flex: 9,
+              child: Text(
+                item.item,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            Flexible(
+              flex: 1,
+              child: Icon(
+                checked
+                    ? Icons.check_box
+                    : Icons
+                        .check_box_outline_blank, //if checked then use check_box else use check_box_outline_blank
+                color: Colors.black,
+              ),
+            )
+          ],
+        ),
+        onTap: () => _itemToggleFunc(item, checked, itemDao, historyDao),
       ),
     );
   }
@@ -439,6 +508,7 @@ class _CheckListState extends State<CheckList> {
         ));
   }
 
+  /*
   void _deleteAll() async {
     final dao = Provider.of<ItemDao>(context, listen: false);
     final List<Item> items = await dao.getAllItems();
@@ -517,5 +587,5 @@ class _CheckListState extends State<CheckList> {
         ),
       );
     }
-  }
+  } */
 }

@@ -1,4 +1,4 @@
-package com.example.shopping_checklist
+package com.example.yet_another_checkList
 
 import io.flutter.embedding.android.FlutterActivity
 

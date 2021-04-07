@@ -36,6 +36,14 @@ dev_dependencies:
     sdk: flutter
   build_runner: null
   moor_generator: ^4.1.0
+  flutter_launcher_icons: ^0.9.0
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/ic_launcher.png"
+  # Use the following command in powershell to change/update the app icon
+  # flutter pub run flutter_launcher_icons:main
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
