@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopping_checklist/constants.dart';
 import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/ui/history.dart';
 import 'package:shopping_checklist/ui/itemGroup.dart';
@@ -21,15 +22,15 @@ class AppDrawer extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          _createHeader(),
+          _createHeader(context),
           _createDrawerItem(
             icon: Icons.library_add_check,
-            text: 'Check List',
+            text: kChecklistScreen,
             position: 0,
             //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
             onTap: () {
               Navigator.of(context).pop();
-              if (this.currentPage == "CheckList") return;
+              if (this.currentPage == kChecklistScreen) return;
 
               Provider.of<DrawerStateInfo>(context, listen: false)
                   .setCurrentDrawer(0);
@@ -44,12 +45,12 @@ class AppDrawer extends StatelessWidget {
           ),
           _createDrawerItem(
             icon: Icons.list_alt,
-            text: 'Presets',
+            text: kPresetScreen,
             position: 1,
             //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
             onTap: () {
               Navigator.of(context).pop();
-              if (this.currentPage == "ItemGroup") return;
+              if (this.currentPage == kPresetAppDrawer) return;
 
               Provider.of<DrawerStateInfo>(context, listen: false)
                   .setCurrentDrawer(1);
@@ -64,12 +65,12 @@ class AppDrawer extends StatelessWidget {
           ),
           _createDrawerItem(
             icon: Icons.history,
-            text: 'History',
+            text: kHistoryScreen,
             position: 2,
             //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
             onTap: () {
               Navigator.of(context).pop();
-              if (this.currentPage == "History") return;
+              if (this.currentPage == kHistoryScreen) return;
 
               Provider.of<DrawerStateInfo>(context, listen: false)
                   .setCurrentDrawer(2);
@@ -84,12 +85,12 @@ class AppDrawer extends StatelessWidget {
           ),
           _createDrawerItem(
             icon: Icons.settings,
-            text: 'Settings',
+            text: kSettingsScreen,
             position: 3,
             //https://dev.to/aaronksaunders/flutter-drawer-with-state-management-3g19
             onTap: () {
               Navigator.of(context).pop();
-              if (this.currentPage == "Settings") return;
+              if (this.currentPage == kSettingsScreen) return;
 
               Provider.of<DrawerStateInfo>(context, listen: false)
                   .setCurrentDrawer(3);
@@ -107,26 +108,38 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _createHeader() {
+  Widget _createHeader(BuildContext context) {
     return DrawerHeader(
-        margin: EdgeInsets.zero,
-        padding: EdgeInsets.zero,
-        decoration: BoxDecoration(
-          color: Colors.blue,
-          /*image: DecorationImage(
-                fit: BoxFit.fill,
-                image: AssetImage('path/to/header_background.png'))*/
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        gradient: new LinearGradient(
+          colors: [
+            Colors.blue,
+            Theme.of(context).backgroundColor,
+          ],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
         ),
-        child: Stack(children: <Widget>[
+      ),
+      child: Stack(
+        children: <Widget>[
           Positioned(
-              bottom: 12.0,
-              left: 16.0,
-              child: Text("Shopping Check List",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30.0,
-                      fontWeight: FontWeight.w500))),
-        ]));
+            bottom: 12.0,
+            left: 16.0,
+            child: Text(
+              kAppName,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 30.0,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _createDrawerItem(

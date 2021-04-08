@@ -40,6 +40,8 @@ class _ItemGroupState extends State<ItemGroup> {
   //Used to temporarily store the priority of the items being entered into a preset
   List<int> priorityList = [0];
 
+  bool cardStyle = false;
+
   void _updateAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt(kAvailablePosition, availablePositionsInCheckList);
@@ -68,6 +70,8 @@ class _ItemGroupState extends State<ItemGroup> {
             prefs.getInt(kLightLowPriority) ?? kDefaultlightLowPriority.value),
       ];
     }
+
+    cardStyle = (prefs.getBool(kUseCardStyle) ?? false);
 
     availablePositionsInCheckList =
         (prefs.getInt(kAvailablePosition) ?? kDefAvailablePositions);
@@ -99,7 +103,7 @@ class _ItemGroupState extends State<ItemGroup> {
         : Scaffold(
             appBar: AppBar(
               title: Text(kPresetScreen),
-              /* actions: [
+              /*actions: [
                 IconButton(
                   icon: Icon(Icons.add_circle_outline),
                   onPressed: _addTestData,
@@ -108,7 +112,7 @@ class _ItemGroupState extends State<ItemGroup> {
                   icon: Icon(Icons.remove_circle_outline),
                   onPressed: _deleteAll,
                 ),
-              ], */
+              ],*/
             ),
             drawer: AppDrawer(kPresetAppDrawer),
             floatingActionButton: FloatingActionButton(
@@ -120,7 +124,11 @@ class _ItemGroupState extends State<ItemGroup> {
           );
   }
 
-  void _newPresetScreenGenerator() {
+  void _newPresetScreenGenerator({
+    bool editingPreset = false,
+    Preset editPreset,
+    List<SetItem> editItems,
+  }) {
     final setItemDao = Provider.of<SetItemDao>(context, listen: false);
     final presetDao = Provider.of<PresetDao>(context, listen: false);
     bool disableRemoveButton = itemList.length == 1;
@@ -217,18 +225,37 @@ class _ItemGroupState extends State<ItemGroup> {
                             onPressed: () async {
                               if (_formKey.currentState.validate()) {
                                 _formKey.currentState.save();
-                                presetDao.insertPreset(PresetsCompanion.insert(
-                                    name: _formController.text));
-                                for (int i = 0; i < itemList.length; i++) {
-                                  setItemDao
-                                      .insertSetItem(SetItemsCompanion.insert(
-                                    item: itemList[i],
-                                    priority: priorityList[i],
-                                    presetId: (await (presetDao.getPresetId(
-                                            _formController.text)))[0]
-                                        .id,
-                                  ));
+                                if (!editingPreset) {
+                                  presetDao.insertPreset(
+                                    PresetsCompanion.insert(
+                                        name: _formController.text),
+                                  );
+                                  for (int i = 0; i < itemList.length; i++) {
+                                    setItemDao
+                                        .insertSetItem(SetItemsCompanion.insert(
+                                      item: itemList[i],
+                                      priority: priorityList[i],
+                                      presetId: (await (presetDao.getPresetId(
+                                              _formController.text)))[0]
+                                          .id,
+                                    ));
+                                  }
+                                } else {
+                                  presetDao.updatePreset(
+                                    editPreset.copyWith(
+                                      name: _formController.text,
+                                    ),
+                                  );
+                                  for (int i = 0; i < itemList.length; i++) {
+                                    setItemDao.updateSetItem(
+                                      editItems[i].copyWith(
+                                        item: itemList[i],
+                                        priority: priorityList[i],
+                                      ),
+                                    );
+                                  }
                                 }
+
                                 itemList = [null];
                                 priorityList = [0];
                                 Navigator.of(context).pop();
@@ -346,20 +373,36 @@ class _ItemGroupState extends State<ItemGroup> {
                 priorityList.add(value[i].priority);
               }
 
-              _newPresetScreenGenerator();
+              _newPresetScreenGenerator(
+                editingPreset: true,
+                editPreset: preset,
+                editItems: value,
+              );
             },
           );
         }
       },
-      child: ListTile(
-        title: Text(
-          preset.name,
-          style: TextStyle(
-            fontSize: 16,
-          ),
+      child: cardStyle
+          ? _buildCard(preset, presetDao)
+          : _buildListTile(preset, presetDao),
+    );
+  }
+
+  _buildCard(Preset preset, PresetDao presetDao) {
+    return Card(
+      child: _buildListTile(preset, presetDao),
+    );
+  }
+
+  _buildListTile(Preset preset, PresetDao presetDao) {
+    return ListTile(
+      title: Text(
+        preset.name,
+        style: TextStyle(
+          fontSize: 16,
         ),
-        onTap: () => _showPresetsDialog(preset, presetDao),
       ),
+      onTap: () => _showPresetsDialog(preset, presetDao),
     );
   }
 
@@ -433,7 +476,7 @@ class _ItemGroupState extends State<ItemGroup> {
                     item.item,
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16,
+                      fontSize: 18,
                     ),
                   ),
                 ],
@@ -486,7 +529,7 @@ class _ItemGroupState extends State<ItemGroup> {
         ));
   }
 
-  /* void _deleteAll() async {
+  /*void _deleteAll() async {
     final presetDao = Provider.of<PresetDao>(context, listen: false);
     final setItemDao = Provider.of<SetItemDao>(context, listen: false);
 
@@ -506,65 +549,49 @@ class _ItemGroupState extends State<ItemGroup> {
 
   void _addTestData() async {
     final Map<String, List<String>> words = {
-      'first': [
-        'images',
-        'css',
-        'LC_MESSAGES',
-        'js',
-        'tmpl',
+      'meat': ['chicken', 'beef', 'pork'],
+      'cookies': [
+        'unsalted butter',
+        'granulated sugar',
+        'light brown sugar',
+        'large eggs',
+        'vanilla extract',
+        'all-purpose flour',
+        'cornstarch',
+        'salt',
+        'baking soda',
+        'baking powder',
       ],
-      'second': [
-        'lang',
-        'default',
-        'README',
-        'templates',
-        'langs',
-        'config',
-        'GNUmakefile',
-        'themes',
-        'en',
-        'img',
-        'admin',
-        'user',
+      'chicken pie': [
+        'chicken',
+        'puff pastry',
+        'carrot',
+        'peas',
+        'onions',
+        'garlic'
       ],
-      'third': [
-        'plugins',
-        'show',
-        'level',
-        'exec',
-        'po',
-        'icons',
-        'classes',
+      'nut mix': [
+        'chashews',
+        'peanuts',
+        'dried cranberries',
+        'pumpkin seeds'
+            'macademia nuts'
       ],
-      'fourth': [
-        'includes',
-        '_notes',
-        'system',
-        'language',
-        'MANIFEST',
-        'modules',
-        'error_log',
-        'views',
-        'backup',
-        'db',
-        'lib',
-        'faqweb',
-        'articleweb',
-        'system32',
-        'skins',
-        '_vti_cnf',
-      ],
-      'fifth': [
-        'models',
-        'news',
-        'cache',
-        'CVS',
-        'main',
-        'html',
-        'faq',
-        'update',
-        'extensions',
-        'jscripts',
+      'pantry basics': [
+        'salt',
+        'pepper',
+        'garlic powder',
+        'onion powder',
+        'chili powder',
+        'garam masala',
+        'tummeric powder',
+        'beans',
+        'peanut oil',
+        'canola oil',
+        'olive oil',
+        'red wine vinegear',
+        'white vinegear',
+        'chicken stock cubes',
       ],
     };
     final Random rng = new Random();
@@ -586,7 +613,7 @@ class _ItemGroupState extends State<ItemGroup> {
         }
       },
     );
-  } */
+  }*/
 }
 
 class ItemTextField extends StatefulWidget {

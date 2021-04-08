@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shopping_checklist/constants.dart';
 import 'package:shopping_checklist/data/AppDatabase.dart';
 import 'package:shopping_checklist/themes/darkTheme.dart';
 import 'package:shopping_checklist/themes/lightTheme.dart';
@@ -9,7 +10,6 @@ import 'package:shopping_checklist/ui/checklist.dart';
 import 'package:shopping_checklist/changeNotifiers/DrawerStateInfo.dart';
 
 import 'changeNotifiers/ThemeNotifier.dart';
-import 'constants.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

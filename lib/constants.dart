@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// ========== APPNAME ==========
+const kAppName = 'Yet Another Checklist';
+
 // ========== SCREEN NAMES ==========
 // START
 

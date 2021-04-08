@@ -23,6 +23,8 @@ class _HistoryState extends State<History> {
 
   bool isLoaded = false;
 
+  bool cardStyle = false;
+
   LinkedHashMap<String, List<HistoryItem>> _historyData =
       LinkedHashMap<String, List<HistoryItem>>();
 
@@ -49,6 +51,8 @@ class _HistoryState extends State<History> {
             prefs.getInt(kLightLowPriority) ?? kDefaultlightLowPriority.value),
       ];
     }
+
+    cardStyle = (prefs.getBool(kUseCardStyle) ?? false);
 
     _numOfMonths = prefs.getInt(kTimeIntervalHistoryDeletion) ??
         kDefHistoryClearTimeIntercal;
@@ -175,6 +179,54 @@ class _HistoryState extends State<History> {
   }
 
   _buildRow(BuildContext context, HistoryItem historyItem) {
+    return cardStyle
+        ? _buildCard(context, historyItem)
+        : _buildListTile(context, historyItem);
+  }
+
+  _buildCard(BuildContext context, HistoryItem historyItem) {
+    return Card(
+      color: historyItem.priority == 0
+          ? priorityColors[2]
+          : historyItem.priority == 1
+              ? priorityColors[1]
+              : priorityColors[0],
+      child: Padding(
+        padding: EdgeInsets.all(15),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  historyItem.item,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox.fromSize(
+              size: Size.fromHeight(7),
+            ),
+            Row(
+              children: [
+                Text(
+                  historyItem.checkedTime.toString(),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  _buildListTile(BuildContext context, HistoryItem historyItem) {
     return ListTile(
       title: Text(
         historyItem.item,
