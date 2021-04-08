@@ -75,6 +75,12 @@ const kUseCardStyleSwitchTitle =
     'Display the list in the checklist screen using cards or not';
 const kUseCardStyleSwitchText = 'Use card style';
 
+const kUsePrioritySystemSwitchTitle =
+    'Enable the usage of priorities for the items';
+const kUsePrioritySystemwarningText =
+    'All the previous items will start off with a low priority. Any existing priorities will be remembered and new ones will be saved with a low priority';
+const kUsePrioritySystemSwitchText = 'Enable Priority System';
+
 const kPriorityColorChangerTitle =
     'You can change the default colors used for the prioratized items below';
 const kPriorityColorChangerHigh = 'High Priority';
@@ -127,7 +133,10 @@ const kUseCardStyle = 'useCardStyle';
 // key for the amount of time that needs to elaspe before the checked items are moved to history
 const kTimeIntervalCheckToHistory = 'timeIntervalCheckToHistory';
 
+// key for the amount of time that needs to elaspe before History items are deleted
 const kTimeIntervalHistoryDeletion = 'timeIntervalHistoryDeletion';
+
+const kpriorityBool = 'useThePrioritySystem';
 
 // key for whether the shared preferences values are set
 const kDefaultPreferencesSet = 'defaultPreferencesSet';
@@ -159,7 +168,7 @@ const int kLightPriorityColorShade = 400;
 // === Color Defaults ===
 
 // default sort order, high to low priority
-const kDefSortOrder = 2;
+const kDefSortOrder = 0;
 
 // default available positions, 0 since there should be no items yet
 const kDefAvailablePositions = 0;

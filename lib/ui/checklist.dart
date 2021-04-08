@@ -43,6 +43,8 @@ class _CheckListState extends State<CheckList> {
 
   bool cardStyle = false;
 
+  bool _usePrioritySystem = false;
+
   final myController = TextEditingController(); //used by the text field later
   FocusNode myFocusNode; //also used by the text field later
 
@@ -86,6 +88,8 @@ class _CheckListState extends State<CheckList> {
         (prefs.getInt(kAvailablePosition) ?? kDefAvailablePositions);
 
     cardStyle = (prefs.getBool(kUseCardStyle) ?? false);
+
+    _usePrioritySystem = (prefs.getBool(kpriorityBool) ?? false);
 
     _intervalAmount = prefs.getInt(kTimeIntervalCheckToHistory) ??
         kDefCheckToHistoryTimeInterval;
@@ -155,40 +159,7 @@ class _CheckListState extends State<CheckList> {
                   icon: Icon(Icons.remove_circle_outline),
                   onPressed: _deleteAll,
                 ),*/
-                PopupMenuButton(
-                  onSelected: (int result) {
-                    setState(
-                      () {
-                        print(result);
-                        sortOrder = result;
-                        _setSortOrder();
-                      },
-                    );
-                  },
-                  icon: Icon(Icons.sort),
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-                    PopupMenuItem(
-                      value: 0,
-                      child: Text(kSortOrder0),
-                    ),
-                    PopupMenuItem(
-                      value: 1,
-                      child: Text(kSortOrder1),
-                    ),
-                    PopupMenuItem(
-                      value: 2,
-                      child: Text(kSortOrder2),
-                    ),
-                    PopupMenuItem(
-                      value: 3,
-                      child: Text(kSortOrder3),
-                    ),
-                    PopupMenuItem(
-                      value: 4,
-                      child: Text(kSortOrder4),
-                    ),
-                  ],
-                ),
+                _sortOrderListBuilder(),
               ],
             ),
             drawer: AppDrawer(kChecklistScreen),
@@ -199,6 +170,55 @@ class _CheckListState extends State<CheckList> {
             ), //Creates the floating action button
             body: _buildList(context),
           );
+  }
+
+  _sortOrderListBuilder() {
+    List<PopupMenuEntry<int>> menuEntries = [
+      PopupMenuItem(
+        value: 0,
+        child: Text(kSortOrder0),
+      ),
+      PopupMenuItem(
+        value: 1,
+        child: Text(kSortOrder1),
+      ),
+    ];
+
+    if (_usePrioritySystem) {
+      menuEntries.add(
+        PopupMenuItem(
+          value: 2,
+          child: Text(kSortOrder2),
+        ),
+      );
+      menuEntries.add(
+        PopupMenuItem(
+          value: 3,
+          child: Text(kSortOrder3),
+        ),
+      );
+    }
+
+    menuEntries.add(
+      PopupMenuItem(
+        value: 4,
+        child: Text(kSortOrder4),
+      ),
+    );
+
+    return PopupMenuButton(
+      onSelected: (int result) {
+        setState(
+          () {
+            print(result);
+            sortOrder = result;
+            _setSortOrder();
+          },
+        );
+      },
+      icon: Icon(Icons.sort),
+      itemBuilder: (BuildContext context) => menuEntries,
+    );
   }
 
   void _newItemScreenGenerator(
@@ -227,23 +247,26 @@ class _CheckListState extends State<CheckList> {
                     focusNode: myFocusNode,
                   ),
                 ),
-                SimpleDialogOption(
-                  child: DropdownButton(
-                    value: tempPriority,
-                    items: <DropdownMenuItem>[
-                      DropdownMenuItem(
-                          child: Text(kDropDownMenuHigh), value: 2),
-                      DropdownMenuItem(
-                          child: Text(kDropDownMenuMedium), value: 1),
-                      DropdownMenuItem(child: Text(kDropDownMenuLow), value: 0),
-                    ],
-                    onChanged: (priority) {
-                      setState(() {
-                        tempPriority = priority;
-                      });
-                    },
-                  ),
-                ),
+                _usePrioritySystem
+                    ? SimpleDialogOption(
+                        child: DropdownButton(
+                          value: tempPriority,
+                          items: <DropdownMenuItem>[
+                            DropdownMenuItem(
+                                child: Text(kDropDownMenuHigh), value: 2),
+                            DropdownMenuItem(
+                                child: Text(kDropDownMenuMedium), value: 1),
+                            DropdownMenuItem(
+                                child: Text(kDropDownMenuLow), value: 0),
+                          ],
+                          onChanged: (priority) {
+                            setState(() {
+                              tempPriority = priority;
+                            });
+                          },
+                        ),
+                      )
+                    : Divider(),
                 Align(
                   alignment: Alignment.bottomRight,
                   child: SimpleDialogOption(
@@ -406,20 +429,24 @@ class _CheckListState extends State<CheckList> {
       child: ListTile(
         title: Text(
           item.item,
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(
+            color: _usePrioritySystem ? Colors.black : Colors.white,
+          ),
         ),
         trailing: Icon(
           checked
               ? Icons.check_box
               : Icons
                   .check_box_outline_blank, //if checked then use check_box else use check_box_outline_blank
-          color: Colors.black,
+          color: _usePrioritySystem ? Colors.black : Colors.white,
         ),
-        tileColor: item.priority == 0
-            ? priorityColors[2]
-            : item.priority == 1
-                ? priorityColors[1]
-                : priorityColors[0],
+        tileColor: _usePrioritySystem
+            ? item.priority == 0
+                ? priorityColors[2]
+                : item.priority == 1
+                    ? priorityColors[1]
+                    : priorityColors[0]
+            : null,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(10))),
         onTap: () => _itemToggleFunc(item, checked, itemDao, historyDao),
@@ -432,11 +459,13 @@ class _CheckListState extends State<CheckList> {
 
     return Container(
       padding: EdgeInsets.all(20),
-      color: item.priority == 0
-          ? priorityColors[2]
-          : item.priority == 1
-              ? priorityColors[1]
-              : priorityColors[0],
+      color: _usePrioritySystem
+          ? item.priority == 0
+              ? priorityColors[2]
+              : item.priority == 1
+                  ? priorityColors[1]
+                  : priorityColors[0]
+          : null,
       child: InkWell(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -446,7 +475,7 @@ class _CheckListState extends State<CheckList> {
               child: Text(
                 item.item,
                 style: TextStyle(
-                  color: Colors.black,
+                  color: _usePrioritySystem ? Colors.black : Colors.white,
                   fontSize: 18,
                 ),
               ),
@@ -458,7 +487,7 @@ class _CheckListState extends State<CheckList> {
                     ? Icons.check_box
                     : Icons
                         .check_box_outline_blank, //if checked then use check_box else use check_box_outline_blank
-                color: Colors.black,
+                color: _usePrioritySystem ? Colors.black : Colors.white,
               ),
             )
           ],

@@ -25,6 +25,8 @@ class _HistoryState extends State<History> {
 
   bool cardStyle = false;
 
+  bool _usePrioritySystem = false;
+
   LinkedHashMap<String, List<HistoryItem>> _historyData =
       LinkedHashMap<String, List<HistoryItem>>();
 
@@ -53,6 +55,8 @@ class _HistoryState extends State<History> {
     }
 
     cardStyle = (prefs.getBool(kUseCardStyle) ?? false);
+
+    _usePrioritySystem = (prefs.getBool(kpriorityBool) ?? false);
 
     _numOfMonths = prefs.getInt(kTimeIntervalHistoryDeletion) ??
         kDefHistoryClearTimeIntercal;
@@ -186,11 +190,13 @@ class _HistoryState extends State<History> {
 
   _buildCard(BuildContext context, HistoryItem historyItem) {
     return Card(
-      color: historyItem.priority == 0
-          ? priorityColors[2]
-          : historyItem.priority == 1
-              ? priorityColors[1]
-              : priorityColors[0],
+      color: _usePrioritySystem
+          ? historyItem.priority == 0
+              ? priorityColors[2]
+              : historyItem.priority == 1
+                  ? priorityColors[1]
+                  : priorityColors[0]
+          : null,
       child: Padding(
         padding: EdgeInsets.all(15),
         child: Column(
@@ -200,7 +206,7 @@ class _HistoryState extends State<History> {
                 Text(
                   historyItem.item,
                   style: TextStyle(
-                    color: Colors.black,
+                    color: _usePrioritySystem ? Colors.black : Colors.white,
                     fontSize: 20,
                   ),
                 ),
@@ -214,7 +220,7 @@ class _HistoryState extends State<History> {
                 Text(
                   historyItem.checkedTime.toString(),
                   style: TextStyle(
-                    color: Colors.black,
+                    color: _usePrioritySystem ? Colors.black : Colors.white,
                     fontSize: 12,
                   ),
                 ),
@@ -230,17 +236,23 @@ class _HistoryState extends State<History> {
     return ListTile(
       title: Text(
         historyItem.item,
-        style: TextStyle(color: Colors.black),
+        style: TextStyle(
+          color: _usePrioritySystem ? Colors.black : Colors.white,
+        ),
       ),
       subtitle: Text(
         historyItem.checkedTime.toString(),
-        style: TextStyle(color: Colors.black),
+        style: TextStyle(
+          color: _usePrioritySystem ? Colors.black : Colors.white,
+        ),
       ),
-      tileColor: historyItem.priority == 0
-          ? priorityColors[2]
-          : historyItem.priority == 1
-              ? priorityColors[1]
-              : priorityColors[0],
+      tileColor: _usePrioritySystem
+          ? historyItem.priority == 0
+              ? priorityColors[2]
+              : historyItem.priority == 1
+                  ? priorityColors[1]
+                  : priorityColors[0]
+          : null,
     );
   }
 

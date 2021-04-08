@@ -18,6 +18,7 @@ class _SettingsState extends State<Settings> {
   bool _isDarkMode = true;
   bool _moveCheckedImmediately = true;
   bool _useCardStyle = false;
+  bool _usePrioritySystem = false;
 
   int _intervalAmount = 0;
   List<int> hourIntervals = [for (int i = 0; i < 25; i += 1) i];
@@ -65,6 +66,14 @@ class _SettingsState extends State<Settings> {
     );
   }
 
+  void _setPriorityBool() {
+    SharedPreferences.getInstance().then(
+      (prefs) {
+        prefs.setBool(kpriorityBool, _usePrioritySystem);
+      },
+    );
+  }
+
   void _setMoveToHistoryTimeInterval() {
     SharedPreferences.getInstance().then(
       (prefs) {
@@ -108,6 +117,8 @@ class _SettingsState extends State<Settings> {
     _numOfMonths = prefs.getInt(kTimeIntervalHistoryDeletion) ??
         kDefHistoryClearTimeIntercal;
 
+    _usePrioritySystem = (prefs.getBool(kpriorityBool) ?? false);
+
     if (_intervalAmount == 0) {
       _moveCheckedImmediately = true;
     } else {
@@ -147,24 +158,36 @@ class _SettingsState extends State<Settings> {
     //TRY: allow theme color change
     //TRY: priority colors per theme
 
-    return ListView(
-      children: [
-        _buildCard(
-          kDarkModeSwitchTitle,
-          hasToggleWidget: true,
-          isSwitch: true,
-          toggleValue: _isDarkMode,
-          toggleText: kDarkModeSwtichText,
-          toggledFunction: _darkModeSwitchFunc,
-        ),
-        _buildCard(
-          kUseCardStyleSwitchTitle,
-          hasToggleWidget: true,
-          isSwitch: true,
-          toggleValue: _useCardStyle,
-          toggleText: kUseCardStyleSwitchText,
-          toggledFunction: _cardStyleSwitchFunc,
-        ),
+    final List<Widget> widgetChildren = [
+      _buildCard(
+        kDarkModeSwitchTitle,
+        hasToggleWidget: true,
+        isSwitch: true,
+        toggleValue: _isDarkMode,
+        toggleText: kDarkModeSwtichText,
+        toggledFunction: _darkModeSwitchFunc,
+      ),
+      _buildCard(
+        kUseCardStyleSwitchTitle,
+        hasToggleWidget: true,
+        isSwitch: true,
+        toggleValue: _useCardStyle,
+        toggleText: kUseCardStyleSwitchText,
+        toggledFunction: _cardStyleSwitchFunc,
+      ),
+      _buildCard(
+        kUsePrioritySystemSwitchTitle,
+        hasToggleWidget: true,
+        isSwitch: true,
+        warning: kUsePrioritySystemwarningText,
+        toggleValue: _usePrioritySystem,
+        toggleText: kUsePrioritySystemSwitchText,
+        toggledFunction: _usePrioritySystemSwitchFunc,
+      ),
+    ];
+
+    if (_usePrioritySystem) {
+      widgetChildren.add(
         _buildCard(
           kPriorityColorChangerTitle,
           hasOwnWidgets: true,
@@ -174,30 +197,39 @@ class _SettingsState extends State<Settings> {
             _buildListTile(kPriorityColorChangerLow, 2),
           ],
         ),
-        _buildCard(
-          kChecklistToHistoryCardTitle,
-          isSwitch: false,
-          toggleValue: _moveCheckedImmediately,
-          toggledFunction: _checkedToHistoryCheckBoxFunc,
-          warning: kChecklistToHistoryCardWarning,
-          toggleText: kChecklistToHistoryCardCheckTitle,
-          intervalTitle: kChecklistToHistoryCardDropDownTitle,
-          intervals: hourIntervals,
-          intervalValue: _intervalAmount,
-          intervalItemtext: kChecklistToHistoryCardDropDownItemText,
-          intervalChangedFunction: _checkedToHistoryDropDownFunc,
-        ),
-        _buildCard(
-          kHistoryDeleteCardTitle,
-          hasToggleWidget: false,
-          warning: kHistoryDeleteCardWarning,
-          intervalTitle: kHistoryDeleteCardDropDownTitle,
-          intervals: monthIntervals,
-          intervalValue: _numOfMonths,
-          intervalItemtext: kHistoryDeleteCardDropDownITem,
-          intervalChangedFunction: _historyDeleteDropDownFunc,
-        ),
-      ],
+      );
+    }
+
+    widgetChildren.add(
+      _buildCard(
+        kChecklistToHistoryCardTitle,
+        isSwitch: false,
+        toggleValue: _moveCheckedImmediately,
+        toggledFunction: _checkedToHistoryCheckBoxFunc,
+        warning: kChecklistToHistoryCardWarning,
+        toggleText: kChecklistToHistoryCardCheckTitle,
+        intervalTitle: kChecklistToHistoryCardDropDownTitle,
+        intervals: hourIntervals,
+        intervalValue: _intervalAmount,
+        intervalItemtext: kChecklistToHistoryCardDropDownItemText,
+        intervalChangedFunction: _checkedToHistoryDropDownFunc,
+      ),
+    );
+    widgetChildren.add(
+      _buildCard(
+        kHistoryDeleteCardTitle,
+        hasToggleWidget: false,
+        warning: kHistoryDeleteCardWarning,
+        intervalTitle: kHistoryDeleteCardDropDownTitle,
+        intervals: monthIntervals,
+        intervalValue: _numOfMonths,
+        intervalItemtext: kHistoryDeleteCardDropDownITem,
+        intervalChangedFunction: _historyDeleteDropDownFunc,
+      ),
+    );
+
+    return ListView(
+      children: widgetChildren,
     );
   }
 
@@ -354,6 +386,15 @@ class _SettingsState extends State<Settings> {
       },
     );
     _setListStyle();
+  }
+
+  _usePrioritySystemSwitchFunc(bool newVal) {
+    setState(
+      () {
+        _usePrioritySystem = newVal;
+      },
+    );
+    _setPriorityBool();
   }
 
   _checkedToHistoryCheckBoxFunc(bool newVal) {

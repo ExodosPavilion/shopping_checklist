@@ -42,6 +42,8 @@ class _ItemGroupState extends State<ItemGroup> {
 
   bool cardStyle = false;
 
+  bool usePrioritySystem = false;
+
   void _updateAvailablePositions() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setInt(kAvailablePosition, availablePositionsInCheckList);
@@ -72,6 +74,8 @@ class _ItemGroupState extends State<ItemGroup> {
     }
 
     cardStyle = (prefs.getBool(kUseCardStyle) ?? false);
+
+    usePrioritySystem = (prefs.getBool(kpriorityBool) ?? false);
 
     availablePositionsInCheckList =
         (prefs.getInt(kAvailablePosition) ?? kDefAvailablePositions);
@@ -148,18 +152,15 @@ class _ItemGroupState extends State<ItemGroup> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // name textfield
-                        Padding(
-                          padding: const EdgeInsets.only(right: 32.0),
-                          child: TextFormField(
-                            controller: _formController,
-                            decoration: InputDecoration(
-                                hintText: kNewPresetDialogNameHint),
-                            validator: (v) {
-                              if (v.trim().isEmpty)
-                                return kNewPresetDialogInvalidNameError;
-                              return null;
-                            },
-                          ),
+                        TextFormField(
+                          controller: _formController,
+                          decoration: InputDecoration(
+                              hintText: kNewPresetDialogNameHint),
+                          validator: (v) {
+                            if (v.trim().isEmpty)
+                              return kNewPresetDialogInvalidNameError;
+                            return null;
+                          },
                         ),
                         SizedBox(
                           height: 20,
@@ -280,25 +281,35 @@ class _ItemGroupState extends State<ItemGroup> {
   /// get text-fields
   List<Widget> _getTextFields() {
     List<Widget> textFields = [];
+
     for (int i = 0; i < itemList.length; i++) {
+      List<Widget> widgetChildren = [
+        Expanded(
+          flex: 2,
+          child: ItemTextField(itemList, priorityList, i),
+        ),
+      ];
+
+      if (usePrioritySystem) {
+        widgetChildren.add(
+          SizedBox(
+            width: 16,
+          ),
+        );
+        widgetChildren.add(
+          Expanded(
+            flex: 1,
+            child: _addPriorityDropDown(i),
+          ),
+        );
+      }
+
       textFields.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Expanded(
-                flex: 2,
-                child: ItemTextField(itemList, priorityList, i),
-              ),
-              SizedBox(
-                width: 16,
-              ),
-              Expanded(
-                flex: 1,
-                child: _addPriorityDropDown(i),
-              ),
-            ],
+            children: widgetChildren,
           ),
         ),
       );
@@ -445,7 +456,12 @@ class _ItemGroupState extends State<ItemGroup> {
         context: context,
         builder: (context) {
           return SimpleDialog(
-            title: Text(preset.name),
+            title: Text(
+              preset.name,
+              style: TextStyle(
+                fontSize: 26,
+              ),
+            ),
             children: [
               Container(
                 width: MediaQuery.of(context).size.width * .8,
@@ -463,11 +479,13 @@ class _ItemGroupState extends State<ItemGroup> {
         (i, item) => MapEntry(
           i,
           Card(
-            color: item.priority == 0
-                ? priorityColors[2]
-                : item.priority == 1
-                    ? priorityColors[1]
-                    : priorityColors[0],
+            color: usePrioritySystem
+                ? item.priority == 0
+                    ? priorityColors[2]
+                    : item.priority == 1
+                        ? priorityColors[1]
+                        : priorityColors[0]
+                : null,
             child: Padding(
               padding: EdgeInsets.all(15),
               child: Row(
@@ -475,7 +493,7 @@ class _ItemGroupState extends State<ItemGroup> {
                   Text(
                     item.item,
                     style: TextStyle(
-                      color: Colors.black,
+                      color: usePrioritySystem ? Colors.black : Colors.white,
                       fontSize: 18,
                     ),
                   ),
